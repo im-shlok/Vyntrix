@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Sprout } from 'lucide-react';
+import Image from 'next/image';
 
 export default function Preloader() {
   const [progress, setProgress] = useState<number>(0);
@@ -175,9 +175,15 @@ export default function Preloader() {
               </defs>
             </svg>
 
-            {/* Central Sprout Logo in active orbital ring */}
+            {/* Central Agriva logo in active orbital ring */}
             <div className="w-11 h-11 rounded-full bg-[#020402] border border-white/10 flex items-center justify-center shadow-[inset_0_0_12px_rgba(16,185,129,0.15)] z-10 relative">
-              <Sprout className="text-emerald-400 animate-pulse" size={20} />
+              <Image
+                src="/logo.png"
+                alt="Agriva logo"
+                width={36}
+                height={36}
+                className="h-9 w-9 rounded-full object-cover"
+              />
             </div>
           </div>
 
