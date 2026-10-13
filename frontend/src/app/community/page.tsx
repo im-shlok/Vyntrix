@@ -31,6 +31,7 @@ export default function CommunityPage() {
   const [newMessage, setNewMessage] = useState<string>("");
   const [selectedTag, setSelectedTag] = useState<string>("All");
   const [userSession, setUserSession] = useState<string | null>(null);
+  const [userDisplayName, setUserDisplayName] = useState<string | null>(null);
   const [activeLanguage, setActiveLanguage] = useState<string>("en");
 
   const LANGUAGES = [
@@ -245,12 +246,37 @@ export default function CommunityPage() {
     const session = localStorage.getItem("kisaan_session");
     if (session) {
       setUserSession(session);
+
+      const storedUser = localStorage.getItem(`kisaan_user_${session.toLowerCase()}`);
+      if (storedUser) {
+        try {
+          const user = JSON.parse(storedUser) as { farmer_name?: string };
+          if (user.farmer_name?.trim()) {
+            setUserDisplayName(user.farmer_name.trim());
+          }
+        } catch {
+          setUserDisplayName(null);
+        }
+      }
     }
 
     // Load messages from localStorage, if empty set to empty array
     const storedChats = localStorage.getItem("kisaan_community_chats");
     if (storedChats) {
-      setMessages(JSON.parse(storedChats));
+      const parsedMessages = JSON.parse(storedChats) as ChatMessage[];
+      setMessages(parsedMessages.map((message) => {
+        const storedUser = localStorage.getItem(`kisaan_user_${message.author.toLowerCase()}`);
+        if (!storedUser) return message;
+
+        try {
+          const user = JSON.parse(storedUser) as { farmer_name?: string };
+          return user.farmer_name?.trim()
+            ? { ...message, author: user.farmer_name.trim() }
+            : message;
+        } catch {
+          return message;
+        }
+      }));
     } else {
       setMessages([]);
     }
@@ -262,7 +288,7 @@ export default function CommunityPage() {
 
     const newMsg: ChatMessage = {
       id: Date.now(),
-      author: userSession.toUpperCase(),
+      author: userDisplayName || "Farmer Node",
       location: "Self Farm Node",
       tag: selectedTag === "All" ? "#General" : selectedTag,
       content: newMessage,
@@ -385,7 +411,7 @@ export default function CommunityPage() {
                   type="text"
                   value={newMessage}
                   onChange={(e) => setNewMessage(e.target.value)}
-                  placeholder={`${t.placeholder}${userSession.toUpperCase()}...`}
+                  placeholder={`${t.placeholder}${userDisplayName || "Farmer Node"}...`}
                   className="flex-1 bg-black/50 border border-white/5 rounded-lg px-3 py-2 outline-none text-xs text-white placeholder-zinc-550 font-semibold"
                 />
                 <button
