@@ -28,7 +28,6 @@ import {
 } from 'lucide-react';
 import FarmMap from '@/components/dashboard/FarmMap';
 import VoiceAssistant from '@/components/dashboard/VoiceAssistant';
-import VisionAnalysis from '@/components/dashboard/VisionAnalysis';
 import Marketprice from '@/components/dashboard/Marketprice';
 import EmergencySOS from '@/components/dashboard/EmergencySOS';
 import GovernmentSchemes from '@/components/dashboard/GovernmentSchemes';
@@ -1308,18 +1307,10 @@ export default function Dashboard() {
           )}
           {/* TAB 2: AI MULTI-AGENT DIAGNOSTIC */}
           {activeTab === "diagnostics" && (
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start pb-8 text-left">
+            <div className="grid grid-cols-1 gap-6 items-start pb-8 text-left">
               
-              {/* Left Column: Crop Scanner & Disease Telemetry (VisionAnalysis) */}
-              <div className="lg:col-span-7 w-full">
-                <VisionAnalysis 
-                  onAnalyzeComplete={handleAgentTrigger}
-                  activeLanguage={activeLanguage}
-                />
-              </div>
-
-              {/* Right Column: Voice Input & Smart Advisory Output Stacks */}
-              <div className="lg:col-span-5 flex flex-col gap-6 w-full">
+              {/* Voice Input & Smart Advisory Output Stacks */}
+              <div className="flex flex-col gap-6 w-full">
                 <VoiceAssistant 
                   onAgentTriggered={handleAgentTrigger}
                   activeLanguage={activeLanguage}
