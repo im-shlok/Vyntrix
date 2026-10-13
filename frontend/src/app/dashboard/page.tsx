@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import Image from 'next/image';
 import {
   Sprout,
   Settings,
@@ -627,7 +628,13 @@ export default function Dashboard() {
             onClick={() => router.push("/")}
             className="flex items-center gap-2.5 cursor-pointer hover:opacity-90 transition-all select-none border-b border-white/5 pb-4"
           >
-            <Sprout size={16} className="text-emerald-500 animate-pulse" />
+            <Image
+              src="/logo.png"
+              alt="Agriva logo"
+              width={24}
+              height={24}
+              className="h-6 w-6 rounded object-contain"
+            />
             <div className="flex flex-col leading-none">
               <span className="font-black text-xs text-white tracking-tight">Agriva</span>
               <span className="text-[7px] font-bold text-emerald-400 font-mono uppercase mt-0.5">
@@ -765,7 +772,13 @@ export default function Dashboard() {
           {/* Header Close */}
           <div className="flex justify-between items-center border-b border-white/5 pb-4">
             <div className="flex items-center gap-2">
-              <Sprout size={16} className="text-emerald-500" />
+              <Image
+                src="/logo.png"
+                alt="Agriva logo"
+                width={24}
+                height={24}
+                className="h-6 w-6 rounded object-contain"
+              />
               <span className="font-extrabold text-sm text-white">Agriva</span>
             </div>
             <button 

@@ -645,7 +645,7 @@ export default function LandingPage() {
                 alt="Agriva logo"
                 width={24}
                 height={24}
-                className="h-6 w-6 rounded object-cover"
+                className="h-6 w-6 rounded object-contain"
               />
               Agriva
             </span>
