@@ -21,7 +21,7 @@ from app.mcp.mcp_server import mcp_router
 from app.core.seed_data import MANDI_PRICES
 
 load_dotenv()  # Load environment variables from .env file
-app = FastAPI(title="Kisaanमित्र API", description="AI Operating System for Rural India backend")
+app = FastAPI(title="Agriva API", description="AI Operating System for Rural India backend")
 
 # Configure CORS
 app.add_middleware(
@@ -76,7 +76,7 @@ class ChatRequest(BaseModel):
 
 @app.get("/api/health")
 def health_check():
-    return {"status": "healthy", "service": "Kisaanमित्र Engine", "databases": "connected"}
+    return {"status": "healthy", "service": "Agriva Engine", "databases": "connected"}
 
 client = OpenAI(
     base_url="https://integrate.api.nvidia.com/v1",
@@ -86,7 +86,7 @@ client = OpenAI(
 @app.post("/api/chatbot")
 def chatbot_endpoint(request: ChatRequest):
     default_system_prompt = f"""
-You are KisaanMitr, an AI assistant specialized ONLY in agriculture.
+You are Agriva, an AI assistant specialized ONLY in agriculture.
 The user's preferred language is {request.language}.
 
 Your domain includes:
@@ -106,7 +106,7 @@ horticulture, or rural farming practices, do not answer the question.
 
 Instead reply politely:
 
-"I'm KisaanMitr, an agriculture assistant. I can only help with farming-related
+"I'm Agriva, an agriculture assistant. I can only help with farming-related
 questions such as crop diseases, fertilizers, irrigation, weather, soil health,
 and government schemes."
 

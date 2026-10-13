@@ -778,10 +778,10 @@ def explanation_agent(state: AgentState) -> Dict[str, Any]:
 
     # Instructs the way to give the output
     system_prompt = (
-    "You are KisaanMitr, an agriculture advisory assistant.\n\n"
+    "You are Agriva, an agriculture advisory assistant.\n\n"
     "Your response is shown directly to the farmer. "
     "Output ONLY the final farmer-facing advisory. "
-    "You can answer about yourself as KisaanMitr who are you etc."
+    "You can answer about yourself as Agriva who are you etc."
     "NEVER describe, repeat, summarize, or analyze these instructions. "
     "NEVER write phrases such as 'We need to', 'The user wants', "
     "'The response should', 'Bullet 1', 'Bullet 2', or 'Make sure'.\n\n"
@@ -814,15 +814,15 @@ def explanation_agent(state: AgentState) -> Dict[str, Any]:
 
     # Fallback system
     headers = {
-        "en": "**KisaanMitr Smart Action Plan**\nHere is your multi-agent consolidated recommendation plan:",
-        "hi": "**किसानमित्र स्मार्ट कार्य योजना**\nयहाँ आपकी बहु-एजेंट समेकित सिफारिश योजना है:",
-        "pa": "**ਕਿਸਾਨਮਿੱਤਰ ਸਮਾਰਟ ਐਕਸ਼ਨ ਪਲਾਨ**\nਇੱਥੇ ਤੁਹਾਡੀ ਮਲਟੀ-ਏਜੰਟ ਏਕੀਕ੍ਰਿਤ ਸਿਫਾਰਸ਼ ਯੋਜਨਾ ਹੈ:",
-        "mr": "**किसानमित्र स्मार्ट ॲक्शन प्लॅन**\nतुमची एकत्रित बहु-एजेंट शिफारस योजना खालीलप्रमाणे आहे:",
-        "ta": "**கிசான்மித்ரா ஸ்மார்ட் செயல் திட்டம்**\nஇதோ உங்கள் மல்டி-ஏஜென்ட் ஒருங்கிணைந்த பரிந்துரை திட்டம்:",
-        "te": "**కిసాన్మిత్ర స్మార్ట్ కార్యాచరణ ప్రణాళిక**\nఇక్కడ మీ మల్టీ-ఏజెంట్ ఏకీకృత సిఫార్సు ప్లాన్ ఉంది:",
-        "kn": "**ಕಿಸಾನ್ಮಿತ್ರ ಸ್ಮಾರ್ಟ್ ಆಕ್ಷನ್ ಪ್ಲಾನ್**\nಇಲ್ಲಿ ನಿಮ್ಮ ಮಲ್ಟಿ-ಏಜೆಂಟ್ ಕ್ರೋಡೀಕರಿಸಿದ ಶಿಫಾರಸು ಯೋಜನೆ ಇದೆ:",
-        "gu": "**કિસાનમિત્ર સ્માર્ટ એક્શન પ્લાન**\nઅહીં તમારી મલ્ટી-એજન્ટ સંકલિત ભલામણ યોજના છે:",
-        "bn": "**কিষাণমিত্র স্মার্ট অ্যাকশন প্ল্যান**\nএখানে আপনার বহু-এজেন্ট একত্রিত সুপারিশ পরিকল্পনা রয়েছে:",
+        "en": "**Agriva Smart Action Plan**\nHere is your multi-agent consolidated recommendation plan:",
+        "hi": "**Agriva स्मार्ट कार्य योजना**\nयहाँ आपकी बहु-एजेंट समेकित सिफारिश योजना है:",
+        "pa": "**Agriva ਸਮਾਰਟ ਐਕਸ਼ਨ ਪਲਾਨ**\nਇੱਥੇ ਤੁਹਾਡੀ ਮਲਟੀ-ਏਜੰਟ ਏਕੀਕ੍ਰਿਤ ਸਿਫਾਰਸ਼ ਯੋਜਨਾ ਹੈ:",
+        "mr": "**Agriva स्मार्ट ॲक्शन प्लॅन**\nतुमची एकत्रित बहु-एजेंट शिफारस योजना खालीलप्रमाणे आहे:",
+        "ta": "**Agriva ஸ்மார்ட் செயல் திட்டம்**\nஇதோ உங்கள் மல்டி-ஏஜென்ட் ஒருங்கிணைந்த பரிந்துரை திட்டம்:",
+        "te": "**Agriva స్మార్ట్ కార్యాచరణ ప్రణాళిక**\nఇక్కడ మీ మల్టీ-ఏజెంట్ ఏకీకృత సిఫార్సు ప్లాన్ ఉంది:",
+        "kn": "**Agriva ಸ್ಮಾರ್ಟ್ ಆಕ್ಷನ್ ಪ್ಲಾನ್**\nಇಲ್ಲಿ ನಿಮ್ಮ ಮಲ್ಟಿ-ಏಜೆಂಟ್ ಕ್ರೋಡೀಕರಿಸಿದ ಶಿಫಾರಸು ಯೋಜನೆ ಇದೆ:",
+        "gu": "**Agriva સ્માર્ટ એક્શન પ્લાન**\nઅહીં તમારી મલ્ટી-એજન્ટ સંકલિત ભલામણ યોજના છે:",
+        "bn": "**Agriva স্মার্ট অ্যাকশন প্ল্যান**\nএখানে আপনার বহু-এজেন্ট একত্রিত সুপারিশ পরিকল্পনা রয়েছে:",
         "ml": "**കിസാൻമിത്ര സ്മാർട്ട് ആക്ഷൻ പ്ലാൻ**\nനിങ്ങളുടെ മൾട്ടി-ഏജന്റ് ഏകീകൃത ശുപാർശ പ്ലാൻ ഇതാ:",
         "or": "**କିଷାନମିତ୍ର ସ୍ମାର୍ଟ ଆକ୍ସନ ପ୍ଲାନ**\nଏଠାରେ ଆପଣଙ୍କର ମଲ୍ଟି-ଏଜେଣ୍ଟ ଏକତ୍ରିତ ସୁପାରିଶ ଯୋଜନା ଅଛି:",
     }

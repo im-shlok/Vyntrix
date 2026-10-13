@@ -344,7 +344,7 @@ export default function VoiceAssistant({ onAgentTriggered, activeLanguage, onLan
     setStatusText("Consulting AI...");
     try {
 
-      const prompt = `You are Kisaanमित्र, a highly advanced multi-agent farming oracle. The user is asking: "${text}".
+      const prompt = `You are Agriva, a highly advanced multi-agent farming oracle. The user is asking: "${text}".
 Language: "${activeLanguage}".
 Write a detailed, structured, highly professional response.
 
@@ -534,7 +534,7 @@ Keep the tone supportive, precise, and tech-aesthetic. Translate everything full
         duration: "5 mins",
         quiz_id: "quiz_tomato"
       }],
-      explanation: `**Kisaanमित्र AI Agent Advisory**\n\n- **[Voice Transcription]**: "${text}"\n- **[Vision Scanner]**: Detected ${disease} on ${crop} leaf (90% Confidence).\n- **[Meteorology]**: Rain expected. Postpone irrigation to avoid fungal acceleration.\n- **[Prescription]**: ${remedy}\n- **[Market]**: Average rates are ₹3,200/q. Selling trend is optimal.`
+      explanation: `**Agriva AI Agent Advisory**\n\n- **[Voice Transcription]**: "${text}"\n- **[Vision Scanner]**: Detected ${disease} on ${crop} leaf (90% Confidence).\n- **[Meteorology]**: Rain expected. Postpone irrigation to avoid fungal acceleration.\n- **[Prescription]**: ${remedy}\n- **[Market]**: Average rates are ₹3,200/q. Selling trend is optimal.`
     };
 
     animateAgentPipeline(["planner", "memory", "vision", "weather", "agriculture", "explanation"], fallbackResponse);

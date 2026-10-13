@@ -14,7 +14,7 @@ export default function Preloader() {
   const logContainerRef = useRef<HTMLDivElement>(null);
 
   const LOG_DATA = [
-    "[BOOT] COMPILING: Kisaanमित्र Core OS v2.1",
+    "[BOOT] COMPILING: Agriva Core OS v2.1",
     "[CONN] Establishing socket telemetry link to sub-district...",
     "[ALLOC] IoT Telemetry Buffer: allocating 1024kb SRAM [OK]",
     "[DB] Connecting to local Qdrant Vector database...",
@@ -187,7 +187,7 @@ export default function Preloader() {
               SMART AGRICULTURE ORCHESTRATION OS
             </span>
             <h2 className="text-xl font-black text-white leading-none tracking-tight flex items-center gap-1.5 font-sans">
-              Kisaanमित्र
+              Agriva
             </h2>
             <p className="text-[10px] text-zinc-400 font-semibold font-sans italic">
               "खेती होगी स्मार्ट, भविष्य होगा मजबूत।"

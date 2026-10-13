@@ -1,12 +1,12 @@
-# Kisaanमित्र 🌾
+# Agriva 🌾
 
 > **"खेती होगी स्मार्ट, भविष्य होगा मजबूत।"**
 
-Kisaanमित्र is an advanced, premium-design **Multi-Agent Farm OS** that integrates computer vision, IoT telemetry, Mandi pricing forecasts, emergency crisis support, and agricultural education into a unified, single-screen dashboard.
+Agriva is an advanced, premium-design **Multi-Agent Farm OS** that integrates computer vision, IoT telemetry, Mandi pricing forecasts, emergency crisis support, and agricultural education into a unified, single-screen dashboard.
 
-Instead of relying on a single chatbot, Kisaanमित्र brings together specialized AI agents for agriculture, crop health, weather, market insights, healthcare, disaster preparedness, and education — working together to give farmers personalized, actionable recommendations.
+Instead of relying on a single chatbot, Agriva brings together specialized AI agents for agriculture, crop health, weather, market insights, healthcare, disaster preparedness, and education — working together to give farmers personalized, actionable recommendations.
 
-Built using a stateful LangGraph Multi-Agent network on the backend and Next.js + TailwindCSS on the frontend, Kisaanमित्र converts messy farm inputs (NPK metrics, leaf spots, regional queries) into actionable agriculture planning guides in under 60 seconds.
+Built using a stateful LangGraph Multi-Agent network on the backend and Next.js + TailwindCSS on the frontend, Agriva converts messy farm inputs (NPK metrics, leaf spots, regional queries) into actionable agriculture planning guides in under 60 seconds.
 
 ---
 
@@ -67,8 +67,8 @@ Ensure **Python 3.10+**, **Node.js 18+**, and **Docker** (with Docker Compose) a
 ### 1. Clone the repository
 
 ```bash
-git clone https://github.com/SRV-KILLER09/KisaanMitr.git
-cd KisaanMitr
+git clone https://github.com/im-shlok/Vyntrix.git
+cd Vyntrix
 ```
 
 ### 2. Start supporting services (Redis & Qdrant)
@@ -119,7 +119,7 @@ npm install
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) to launch Kisaanमित्र.
+Open [http://localhost:3000](http://localhost:3000) to launch Agriva.
 
 ---
 
@@ -239,7 +239,6 @@ This project is licensed under the [MIT License](./LICENSE).
 <img width="909" height="644" alt="image" src="https://github.com/user-attachments/assets/b78ed1b4-686f-4c6a-957b-7cc19f768434" />
 
 ---
-
 
 
 

@@ -37,7 +37,7 @@ export default function LandingPage() {
   const [typedLogs, setTypedLogs] = useState<string[]>([""]);
 
   const LOG_POOL = [
-    "→ Initializing Kisaanमित्र Core OS v2.1...",
+    "→ Initializing Agriva Core OS v2.1...",
     "→ Establishing telemetry link to local Krishi Vigyan Kendra (KVK)...",
     "→ IoT telemetry buffers initialized successfully [OK]",
     "→ Connecting to Qdrant vector database: Index kisaan_kb loaded",
@@ -109,7 +109,7 @@ export default function LandingPage() {
       tagline: "खेती होगी स्मार्ट, भविष्य होगा मजबूत.",
       heroTitle1: "SCATTERED FARMS.",
       heroTitle2: "ONE DICTIONARY.",
-      heroSub: "Where heritage farming meets autonomous orchestration. Kisaanमित्र synthesizes live soil telemetry, localized meteorological bulletins, and neural leaf diagnostics into an action-ready agricultural cockpit.",
+      heroSub: "Where heritage farming meets autonomous orchestration. Agriva synthesizes live soil telemetry, localized meteorological bulletins, and neural leaf diagnostics into an action-ready agricultural cockpit.",
       launchOS: "Launch Farm OS",
       seeFeatures: "See Features",
       capTitle: "SYSTEM CAPABILITIES",
@@ -117,7 +117,7 @@ export default function LandingPage() {
       capDesc: "Get a dynamic farm health grade, sensor telemetry charts, and an issues log with remediation tips loaded directly.",
       howTitle: "STEP-BY-STEP CALIBRATION",
       howSubtitle: "How To Orchestrate Your Farm",
-      howDesc: "Learn the core concept and execution pipeline behind Kisaanमित्र's AI-to-Farmer orchestrations.",
+      howDesc: "Learn the core concept and execution pipeline behind Agriva's AI-to-Farmer orchestrations.",
       howBtn: "Launch Schematic Blueprint",
       step1Title: "Create Smart Farm Node",
       step1Desc: "Input your village name, target crop variety, and land size coordinates in the Auth Portal to calibrate mapping parameters.",
@@ -127,7 +127,7 @@ export default function LandingPage() {
       step3Desc: "Receive coordinated LangGraph advisories translating weather, crop remedies, government schemes, and mandi MSPs.",
       meshTitle: "Autonomous orchestration",
       meshSubtitle: "Multi-Agent Coordination Mesh",
-      meshDesc: "Kisaanमित्र deploys a compiled state graph of LangGraph agents to compute action advisories dynamically based on soil metrics and sensor logs. Hover over any outer agent node on the constellation circle to inspect tools and roles.",
+      meshDesc: "Agriva deploys a compiled state graph of LangGraph agents to compute action advisories dynamically based on soil metrics and sensor logs. Hover over any outer agent node on the constellation circle to inspect tools and roles.",
       bpTitle: "Interactive Schematic Blueprint",
       bpTag: "KISAANMITRA SYSTEM ARCHITECTURE",
       bpClose: "Acknowledge Blueprint",
@@ -142,7 +142,7 @@ export default function LandingPage() {
       tagline: "खेती होगी स्मार्ट, भविष्य होगा मजबूत.",
       heroTitle1: "बिखरे हुए खेत।",
       heroTitle2: "एक ही शब्दकोश।",
-      heroSub: "जहां पारंपरिक खेती और स्वायत्त ऑर्केस्ट्रेशन का मिलन होता है। किसानमित्र मिट्टी की लाइव टेलीमेट्री, स्थानीय मौसम बुलेटिन और न्यूरल लीफ निदान को एक कार्य-तैयार कृषि कॉकपिट में संश्लेषित करता है।",
+      heroSub: "जहां पारंपरिक खेती और स्वायत्त ऑर्केस्ट्रेशन का मिलन होता है। Agriva मिट्टी की लाइव टेलीमेट्री, स्थानीय मौसम बुलेटिन और न्यूरल लीफ निदान को एक कार्य-तैयार कृषि कॉकपिट में संश्लेषित करता है।",
       launchOS: "फार्म ओएस लॉन्च करें",
       seeFeatures: "विशेषताएं देखें",
       capTitle: "सिस्टम क्षमताएं",
@@ -150,7 +150,7 @@ export default function LandingPage() {
       capDesc: "सीधे लोड किए गए सुधार युक्तियों के साथ एक गतिशील कृषि स्वास्थ्य ग्रेड, सेंसर टेलीमेट्री चार्ट और समस्या लॉग प्राप्त करें।",
       howTitle: "कदम-दर-कदम अंशांकन",
       howSubtitle: "अपने फार्म को कैसे व्यवस्थित करें",
-      howDesc: "किसानमित्र के एआई-टू-किसान ऑर्केस्ट्रेशन के पीछे मुख्य अवधारणा और निष्पादन पाइपलाइन सीखें।",
+      howDesc: "Agriva के एआई-टू-किसान ऑर्केस्ट्रेशन के पीछे मुख्य अवधारणा और निष्पादन पाइपलाइन सीखें।",
       howBtn: "योजनाबद्ध खाका खोलें",
       step1Title: "स्मार्ट फार्म नोड बनाएं",
       step1Desc: "मानचित्रण मापदंडों को कैलिब्रेट करने के लिए ऑथ पोर्टल में अपने गाँव का नाम, लक्षित फसल और भूमि का आकार दर्ज करें।",
@@ -160,9 +160,9 @@ export default function LandingPage() {
       step3Desc: "मौसम, फसल उपचार, सरकारी योजनाओं और मंडी एमएसपी का अनुवाद करने वाली समन्वित लैंगग्राफ सलाह प्राप्त करें।",
       meshTitle: "स्वायत्त ऑर्केस्ट्रेशन",
       meshSubtitle: "मल्टी-एजेंट समन्वय जाल",
-      meshDesc: "किसानमित्र मिट्टी के मेट्रिक्स और सेंसर लॉग के आधार पर गतिशील रूप से कार्रवाई सलाह की गणना करने के लिए लैंगग्राफ एजेंटों के एक संकलित राज्य ग्राफ को तैनात करता है। उपकरणों और भूमिकाओं का निरीक्षण करने के लिए नक्षत्र चक्र पर किसी भी बाहरी एजेंट नोड पर होवर करें।",
+      meshDesc: "Agriva मिट्टी के मेट्रिक्स और सेंसर लॉग के आधार पर गतिशील रूप से कार्रवाई सलाह की गणना करने के लिए लैंगग्राफ एजेंटों के एक संकलित राज्य ग्राफ को तैनात करता है। उपकरणों और भूमिकाओं का निरीक्षण करने के लिए नक्षत्र चक्र पर किसी भी बाहरी एजेंट नोड पर होवर करें।",
       bpTitle: "इंटरैक्टिव योजनाबद्ध खाका",
-      bpTag: "किसानमित्र प्रणाली वास्तुकला",
+      bpTag: "Agriva प्रणाली वास्तुकला",
       bpClose: "खाका स्वीकार करें",
       stage1Title: "असंरचित इनपुट",
       stage1Desc: "किसान से सीधे इनपुट लेता है: क्षेत्रीय आवाज नोट्स, पत्ती स्कैन और आईओटी नमी सूचकांक।",
@@ -175,7 +175,7 @@ export default function LandingPage() {
       tagline: "खेती होगी स्मार्ट, भविष्य होगा मजबूत.",
       heroTitle1: "ਖਿਲਰੇ ਹੋਏ ਖੇਤ।",
       heroTitle2: "ਇੱਕੋ ਸ਼ਬਦਕੋਸ਼।",
-      heroSub: "ਜਿੱਥে ਪਰੰਪਰਾਗਤ ਖੇਤੀ ਅਤੇ ਸਵੈ-ਚਾਲਿਤ ਆਰਕੈਸਟ੍ਰੇਸ਼ਨ ਦਾ ਮੇਲ ਹੁੰਦਾ ਹੈ। ਕਿਸਾਨਮਿੱਤਰ ਮਿੱਟੀ ਦੀ ਲਾਈਵ ਟੈਲੀਮੈਟਰੀ, ਸਥਾਨਕ ਮੌਸਮ ਬੁਲੇਟਿਨ ਅਤੇ ਨਿਊਰਲ ਪੱਤਿਆਂ ਦੇ ਨਿਦਾਨ ਨੂੰ ਇੱਕ ਫਾਰਮ ਕਾਕਪਿਟ ਵਿੱਚ ਇਕੱਠਾ ਕਰਦਾ ਹੈ।",
+      heroSub: "ਜਿੱਥে ਪਰੰਪਰਾਗਤ ਖੇਤੀ ਅਤੇ ਸਵੈ-ਚਾਲਿਤ ਆਰਕੈਸਟ੍ਰੇਸ਼ਨ ਦਾ ਮੇਲ ਹੁੰਦਾ ਹੈ। Agriva ਮਿੱਟੀ ਦੀ ਲਾਈਵ ਟੈਲੀਮੈਟਰੀ, ਸਥਾਨਕ ਮੌਸਮ ਬੁਲੇਟਿਨ ਅਤੇ ਨਿਊਰਲ ਪੱਤਿਆਂ ਦੇ ਨਿਦਾਨ ਨੂੰ ਇੱਕ ਫਾਰਮ ਕਾਕਪਿਟ ਵਿੱਚ ਇਕੱਠਾ ਕਰਦਾ ਹੈ।",
       launchOS: "ਫਾਰਮ OS ਲਾਂਚ ਕਰੋ",
       seeFeatures: "ਵਿਸ਼ੇಶਤਾਵਾਂ ਦੇਖੋ",
       capTitle: "ਸਿਸਟਮ ਸਮਰੱਥਾਵਾਂ",
@@ -183,7 +183,7 @@ export default function LandingPage() {
       capDesc: "ਸਿੱਧੇ ਲੋਡ ਕੀਤੇ ਗਏ ਸੁਧਾਰ ਸੁਝਾਵਾਂ ਦੇ ਨਾਲ ਇੱਕ ਗਤੀਸ਼ੀਲ ਫਾਰਮ ਸਿਹਤ ਗ੍ਰੇਡ, ਸੈਂਸਰ ਟੈਲੀਮੈਟਰੀ ਚਾਰਟ ਅਤੇ ਸਮੱਸਿਆ ਲੌਗ ਪ੍ਰਾਪਤ ਕਰੋ।",
       howTitle: "ਕਦਮ-ਦਰ-ਕਦਮ ਕੈਲੀਬਰੇਸ਼ਨ",
       howSubtitle: "ਆਪਣੇ ਫਾਰਮ ਨੂੰ ਕਿਵੇਂ ਵਿਵਸਥਿਤ ਕਰਨਾ ਹੈ",
-      howDesc: "ਕਿਸਾਨਮਿੱਤਰ ਦੇ AI-ਤੋਂ-ਕਿਸਾਨ ਆਰਕੈਸਟ੍ਰੇਸ਼ਨਾਂ ਦੇ ਪਿੱਛੇ ਮੁੱਖ ਸੰਕਲਪ ਅਤੇ ਐਗਜ਼ੀਕਿਊਸ਼ਨ ਪਾਈਪਲਾਈਨ ਸਿੱਖੋ।",
+      howDesc: "Agriva ਦੇ AI-ਤੋਂ-ਕਿਸਾਨ ਆਰਕੈਸਟ੍ਰੇਸ਼ਨਾਂ ਦੇ ਪਿੱਛੇ ਮੁੱਖ ਸੰਕਲਪ ਅਤੇ ਐਗਜ਼ੀਕਿਊਸ਼ਨ ਪਾਈਪਲਾਈਨ ਸਿੱਖੋ।",
       howBtn: "ਯੋਜਨਾਬੱਧ ਬਲੂਪ੍ਰਿੰտ ਖੋਲ੍ਹੋ",
       step1Title: "ਸਮਾਰਟ ਫਾਰਮ ਨੋਡ ਬਣਾਓ",
       step1Desc: "ਮੈਪਿੰਗ ਮਾਪਦੰਡਾਂ ਨੂੰ ਕੈਲੀਬਰੇਟ ਕਰਨ ਲਈ ਅਥਾਰਟੀ ਪੋਰਟਲ ਵਿੱਚ ਆਪਣੇ ਪਿੰਡ ਦਾ ਨਾਮ, ਨਿਸ਼ਾਨਾ ਫਸਲ ਅਤੇ ਜ਼ਮੀਨ ਦਾ ਆਕਾਰ ਦਰਜ ਕਰੋ।",
@@ -193,9 +193,9 @@ export default function LandingPage() {
       step3Desc: "ਮੌਸਮ, ਫਸਲਾਂ ਦੇ ਉਪਚਾਰ, ਸਰਕਾਰੀ ਸਕੀਮਾਂ ਅਤੇ ਮੰਡੀ MSP ਦਾ ਅਨੁਵਾਦ ਕਰਨ ਵਾਲੀ ਤਾਲਮੇલ ਵਾਲੀ ਲੈਂਗਗ੍ਰਾਫ ਸਲਾਹ ਪ੍ਰਾਪਤ ਕਰੋ।",
       meshTitle: "ਖੁਦਮੁਖਤਿਆਰ ਆਰਕੈਸਟ੍ਰੇਸ਼ਨ",
       meshSubtitle: "ਮਲਟੀ-ਏਜੰਟ ਤਾਲਮेਲ ਜਾਲ",
-      meshDesc: "ਕਿਸਾਨਮਿੱਤਰ ਮਿੱਟੀ ਦੇ ਮੈਟ੍ਰਿਕਸ ਅਤੇ ਸੈਂਸਰ ਲੌਗਸ ਦੇ ਅਧਾਰ 'ਤੇ ਗਤੀਸ਼ੀล ਤੌਰ 'ਤੇ ਕਾਰਵਾਈ ਦੀ ਸਲਾਹ ਦੀ ਗਣਨਾ ਕਰਨ ਲਈ ਲੈਂਗਗ੍ਰਾਫ ਏਜੰਟਾਂ ਦੇ ਇੱਕ ਸੰਕਲਿਤ ਸਟੇਟ ਗ੍ਰਾଫ ਨੂੰ ਤੈਨਾਤ ਕਰਦਾ ਹੈ। ਟੂଲਸ ਅਤੇ ਭੂਮਿਕਾਵਾਂ ਦਾ ਮੁਆਇਨਾ ਕਰਨ ਲਈ ਤਾਰਾਮੰਡਲ ਸਰਕਲ 'ਤੇ ਕਿਸੇ ਵੀ ਬਾਹਰੀ ਏਜੰਟ ਨੋਡ 'ਤੇ ਹੋਵਰ ਕਰੋ।",
+      meshDesc: "Agriva ਮਿੱਟੀ ਦੇ ਮੈਟ੍ਰਿਕਸ ਅਤੇ ਸੈਂਸਰ ਲੌਗਸ ਦੇ ਅਧਾਰ 'ਤੇ ਗਤੀਸ਼ੀล ਤੌਰ 'ਤੇ ਕਾਰਵਾਈ ਦੀ ਸਲਾਹ ਦੀ ਗਣਨਾ ਕਰਨ ਲਈ ਲੈਂਗਗ੍ਰਾਫ ਏਜੰਟਾਂ ਦੇ ਇੱਕ ਸੰਕਲਿਤ ਸਟੇਟ ਗ੍ਰਾଫ ਨੂੰ ਤੈਨਾਤ ਕਰਦਾ ਹੈ। ਟੂଲਸ ਅਤੇ ਭੂਮਿਕਾਵਾਂ ਦਾ ਮੁਆਇਨਾ ਕਰਨ ਲਈ ਤਾਰਾਮੰਡਲ ਸਰਕਲ 'ਤੇ ਕਿਸੇ ਵੀ ਬਾਹਰੀ ਏਜੰਟ ਨੋਡ 'ਤੇ ਹੋਵਰ ਕਰੋ।",
       bpTitle: "ਇੰਟਰਐਕਟਿਵ ਯੋਜನಾਬੱਧ ਬਲੂਪ੍ਰਿੰտ",
-      bpTag: "ਕਿਸਾਨਮਿੱਤਰ ਪ੍ਰਣਾਲੀ ਆਰਕੀਟੈਕਚਰ",
+      bpTag: "Agriva ਪ੍ਰਣਾਲੀ ਆਰਕੀਟੈਕਚਰ",
       bpClose: "ਬਲੂਪ੍ਰਿੰտ ਸਵੀਕਾਰ ਕਰੋ",
       stage1Title: "ਗੈਰ-ਸੰਗਠਿਤ ਇਨਪੁਟਸ",
       stage1Desc: "ਕਿਸਾਨ ਤੋਂ ਸਿੱਧੇ ਇਨਪੁਟ ਲੈਂਦਾ ਹੈ: ਖੇਤਰੀ ਆਵਾਜ਼ ਨੋਟਸ, ਪੱਤੇ ਦੇ ਸਕੈน ਅਤੇ IoT ਨਮੀ ਸੈਂਸਰ।",
@@ -208,7 +208,7 @@ export default function LandingPage() {
       tagline: "खेती होगी स्मार्ट, भविष्य होगा मजबूत.",
       heroTitle1: "विखुरलेली शेती.",
       heroTitle2: "एकच शब्दकोश.",
-      heroSub: "जेथे पारंपारिक शेती आणि स्वायत्त संचलन एकत्र येतात. किसानमित्र थेट मातीची केलीमेट्री, स्थानिक हवामान अंदाज आणि पानावरील रोगांचे न्यूरल विश्लेषण या सर्वांचे एकत्रीकरण करून एक प्रगत कृषी डॅशबोर्ड तयार करतो।",
+      heroSub: "जेथे पारंपारिक शेती आणि स्वायत्त संचलन एकत्र येतात. Agriva थेट मातीची केलीमेट्री, स्थानिक हवामान अंदाज आणि पानावरील रोगांचे न्यूरल विश्लेषण या सर्वांचे एकत्रीकरण करून एक प्रगत कृषी डॅशबोर्ड तयार करतो।",
       launchOS: "फार्म ओएस उघडा",
       seeFeatures: "वैशिष्ट्ये पहा",
       capTitle: "सिस्टम क्षमता",
@@ -216,7 +216,7 @@ export default function LandingPage() {
       capDesc: "गतिशील फार्म आरोग्य श्रेणी आणि उपाय नोंदी थेट लोड करा.",
       howTitle: "पायरी-दर-पायरी अंशांकन",
       howSubtitle: "आपला फार्म कसा व्यवस्थापित करावा",
-      howDesc: "किसानमित्रच्या एआय-टू-किसान कार्यपद्धतीची रचना येथे शिका.",
+      howDesc: "Agrivaच्या एआय-टू-किसान कार्यपद्धतीची रचना येथे शिका.",
       howBtn: "योजनाबद्ध आराखडा उघडा",
       step1Title: "स्मार्ट फार्म नोड तयार करा",
       step1Desc: "नकाशाचे घटक मोजण्यासाठी तुमचे गाव, पीक आणि जमीन क्षेत्राची नोंदणी करा.",
@@ -228,7 +228,7 @@ export default function LandingPage() {
       meshSubtitle: "मल्टी-एजंट समन्वय मॅप",
       meshDesc: "मातीचे गुणक तपासून लैंगग्राफ तंत्रज्ञानावर कार्य करणारे नोड्स माहिती दर्शवतात.",
       bpTitle: "परस्पर आराखडा",
-      bpTag: "किसानमित्र प्रणाली वास्तुकला",
+      bpTag: "Agriva प्रणाली वास्तुकला",
       bpClose: "आराखडा स्वीकारा",
       stage1Title: "असंरचित इनपुट",
       stage1Desc: "शेतकऱ्याकडून मिळणारी थेट माहिती गोळा करते.",
@@ -241,7 +241,7 @@ export default function LandingPage() {
       tagline: "खेती होगी स्मार्ट, भविष्य होगा मजबूत.",
       heroTitle1: "చెల్లాచెదురైన పొలాలు.",
       heroTitle2: "ఒక నిఘంటువు.",
-      heroSub: "సాంప్రదాయ వ్యవసాయం మరియు స్వయంప్రతిపత్త సమన్వయం కలిసే చోటు. కిసాన్ మిత్ర భూమి తేమ వివరాలు, వాతావరణ నివేదికలు మరియు పంట తెగుళ్ల విశ్લેషణలను క్రోడీకరించి ఒకే డిజిటల్ కంట్రోಲ್ సెంటర్ అందిస్తుంది.",
+      heroSub: "సాంప్రదాయ వ్యవసాయం మరియు స్వయంప్రతిపత్త సమన్వయం కలిసే చోటు. Agriva భూమి తేమ వివరాలు, వాతావరణ నివేదికలు మరియు పంట తెగుళ్ల విశ్લેషణలను క్రోడీకరించి ఒకే డిజిటల్ కంట్రోಲ್ సెంటర్ అందిస్తుంది.",
       launchOS: "ఫార్మ్ OS ప్రారంభించండి",
       seeFeatures: "ఫీచర్లు చూడండి",
       capTitle: "వ్యవస్థ సామర్థ్యాలు",
@@ -249,7 +249,7 @@ export default function LandingPage() {
       capDesc: "ఖచ్చితమైన నేల పరీక్షలు, తెగుళ్ల గుర్తింపు వివరాలను పొందండి.",
       howTitle: "పద్ధతి వివరణ",
       howSubtitle: "మీ వ్యవసాయాన్ని ఎలా నిర్వహించాలి",
-      howDesc: "కిసాన్ మిత్ర స్మార్ట్ అగ్రి సిస్టమ్ పద్ధతిని తెలుసుకోండి.",
+      howDesc: "Agriva స్మార్ట్ అగ్రి సిస్టమ్ పద్ధతిని తెలుసుకోండి.",
       howBtn: "రూపకల్పన పటం తెరవండి",
       step1Title: "స్మార్ట్ ఫార్మ్ నోడ్ సృష్టించండి",
       step1Desc: "మీ గ్రామం పేరు, పంట మరియు విస్తీర్ణం వివరాలను నమోదు చేయండి.",
@@ -261,7 +261,7 @@ export default function LandingPage() {
       meshSubtitle: "మల్టి-ఏజెంట్ కోఆర్డినేషన్ మెష్",
       meshDesc: "వివిధ ప్రత్యేక ఏజెంట్లు సమన్వయంతో విశ్లేషించి రైతుకు సలహాలు ఇస్తాయి.",
       bpTitle: "ఇంటరాక్టివ్ బ్లూప్రింట్",
-      bpTag: "కిసాన్‌మిత్ర సిస్టమ్ ఆర్కిటెక్చర్",
+      bpTag: "Agriva సిస్టమ్ ఆర్కిటెక్చర్",
       bpClose: "బ్లూప్రింట్ ఆమోదించండి",
       stage1Title: "అన్ స్ట్రక్చర్డ్ ఇన్పుట్స్",
       stage1Desc: "నేల తేమ, ఆకు స్కాన్లు మరియు వాయిస్ ఆదేశాలను సేకరిస్తుంది.",
@@ -274,7 +274,7 @@ export default function LandingPage() {
       tagline: "खेती होगी स्मार्ट, भविष्य होगा मजबूत.",
       heroTitle1: "சிதறிய பண்ணைகள்.",
       heroTitle2: "ஒரு அகராதி.",
-      heroSub: "பாரம்பரிய விவசாயமும் தன்னாட்சி ஒருங்கிணைப்பும் இணையும் இடம். கிசான்மித்ரா மண் தரவுகள், உள்ளூர் வானிலை தகவல்கள் மற்றும் இலை நோய் பகுப்பாய்வுகளை ஒருங்கிணைத்து சிறந்த பண்ணை மேலாண்மை அமைப்பை வழங்குகிறது.",
+      heroSub: "பாரம்பரிய விவசாயமும் தன்னாட்சி ஒருங்கிணைப்பும் இணையும் இடம். Agriva மண் தரவுகள், உள்ளூர் வானிலை தகவல்கள் மற்றும் இலை நோய் பகுப்பாய்வுகளை ஒருங்கிணைத்து சிறந்த பண்ணை மேலாண்மை அமைப்பை வழங்குகிறது.",
       launchOS: "பண்ணை OS-ஐ துவக்கு",
       seeFeatures: "அம்சங்களை காண்க",
       capTitle: "கணினி திறன்கள்",
@@ -282,7 +282,7 @@ export default function LandingPage() {
       capDesc: "பண்ணை ஆரோக்கியம், மண் அளவீடுகள் மற்றும் தீர்வு பதிவுகளை பெறுக.",
       howTitle: "வழிமுறை அமைப்புகள்",
       howSubtitle: "பண்ணையை எவ்வாறு நிர்வகிப்பது",
-      howDesc: "கிசான்மித்ராவின் செயற்கை நுண்ணறிவு விவசாய வழிமுறையை அறியுங்கள்.",
+      howDesc: "Agrivaவின் செயற்கை நுண்ணறிவு விவசாய வழிமுறையை அறியுங்கள்.",
       howBtn: "வரைபட அமைப்பை காண்க",
       step1Title: "ஸ்மார்ட் பண்ணை முனையத்தை உருவாக்கு",
       step1Desc: "வடிவமைப்புகளை சரிசெய்ய உங்கள் கிராமம், பயிர் வகை மற்றும் நில அளவை உள்ளிடவும்.",
@@ -294,7 +294,7 @@ export default function LandingPage() {
       meshSubtitle: "முகவர் ஒருங்கிணைப்பு கட்டமைப்பு",
       meshDesc: "பல்வேறு சிறப்பு முகவர்கள் இணைந்து விவசாயிகளுக்கு தேவையான பரிந்துரைகளை வழங்குகின்றன.",
       bpTitle: "ஊடாடும் வரைபடம்",
-      bpTag: "கிசான்மித்ரா கணினி வடிவமைப்பு",
+      bpTag: "Agriva கணினி வடிவமைப்பு",
       bpClose: "அமைப்பை உறுதிசெய்",
       stage1Title: "கட்டமைக்கப்படாத உள்ளீடுகள்",
       stage1Desc: "குரல் பதிவுகள், இலை ஸ்கேன்கள் மற்றும் மண் தரவுகளை பெறுகிறது.",
@@ -307,7 +307,7 @@ export default function LandingPage() {
       tagline: "खेती होगी स्मार्ट, भविष्य होगा मजबूत.",
       heroTitle1: "ಹರಡಿದ ಹೊಲಗಳು.",
       heroTitle2: "ಒಂದೇ ನಿಘಂಟು.",
-      heroSub: "ಸಾಂಪ್ರದಾಯಿಕ ಕೃಷಿ ಮತ್ತು ಸ್ವಯಂಚಾಲಿತ ಸಮನ್ವಯತೆಯ ಸಂಗಮ. ಕಿಸಾನ್ ಮಿತ್ರ ಕೃಷಿ ಮಣ್ಣಿನ ಟೆಲಿಮೆಟ್ರಿ, ಹವಾಮಾನ ಮುನ್ಸೂಚನೆ ಮತ್ತು ಎಲೆ ರೋಗನಿರ್ಣಯವನ್ನು ಕ್ರೋಢೀಕರಿಸಿ ಸಮಗ್ರ ಕೃಷಿ ನಿಯಂತ್ರಣ ಒದಗಿಸುತ್ತದೆ.",
+      heroSub: "ಸಾಂಪ್ರದಾಯಿಕ ಕೃಷಿ ಮತ್ತು ಸ್ವಯಂಚಾಲಿತ ಸಮನ್ವಯತೆಯ ಸಂಗಮ. Agriva ಕೃಷಿ ಮಣ್ಣಿನ ಟೆಲಿಮೆಟ್ರಿ, ಹವಾಮಾನ ಮುನ್ಸೂಚನೆ ಮತ್ತು ಎಲೆ ರೋಗನಿರ್ಣಯವನ್ನು ಕ್ರೋಢೀಕರಿಸಿ ಸಮಗ್ರ ಕೃಷಿ ನಿಯಂತ್ರಣ ಒದಗಿಸುತ್ತದೆ.",
       launchOS: "ಕೃಷಿ OS ಪ್ರಾರಂಭಿಸಿ",
       seeFeatures: "ವೈಶಿಷ್ಟ್ಯಗಳನ್ನು ನೋಡಿ",
       capTitle: "ವ್ಯವಸ್ಥೆಯ ಸಾಮರ್ಥ್ಯಗಳು",
@@ -315,7 +315,7 @@ export default function LandingPage() {
       capDesc: "ಖಚಿತವಾದ ಕೃಷಿ ಆರೋಗ್ಯ ಸೂಚ್ಯಂಕ ಮತ್ತು ತಪಾಸಣೆ ವಿವರಗಳನ್ನು ಪಡೆದುಕೊಳ್ಳಿ.",
       howTitle: "ಹಂತ-ಹಂತದ ತಪಾಸಣೆ",
       howSubtitle: "ನಿಮ್ಮ ಕೃಷಿಯನ್ನು ಹೇಗೆ ನಿರ್ವಹಿಸುವುದು",
-      howDesc: "ಕಿಸಾನ್ ಮಿತ್ರ ಕೃಷಿ ನಿರ್ವಹಣೆ ಪ್ರಕ್ರಿಯೆಯನ್ನು ಇಲ್ಲಿ ತಿಳಿಯಿರಿ.",
+      howDesc: "Agriva ಕೃಷಿ ನಿರ್ವಹಣೆ ಪ್ರಕ್ರಿಯೆಯನ್ನು ಇಲ್ಲಿ ತಿಳಿಯಿರಿ.",
       howBtn: "ಬ್ಲೂಪ್ರಿಂಟ್ ನಕ್ಷೆ ತೆರೆಯಿರಿ",
       step1Title: "ಸ್ಮಾರ್ಟ್ ಕೃಷಿ ನೋಡ್ ರಚಿಸಿ",
       step1Desc: "ನಕ್ಷೆ ಅಳತೆಗಾಗಿ ನಿಮ್ಮ ಗ್ರಾಮ, ಬೆಳೆ ಮತ್ತು ಜಮೀನಿನ ವಿಸ್ತೀರ್ಣ ದಾಖಲಿಸಿ.",
@@ -327,7 +327,7 @@ export default function LandingPage() {
       meshSubtitle: "ಮಲ್ಟಿ-ಏಜೆಂಟ್ ಸಮನ್ವಯ ಜಾಲ",
       meshDesc: "ವಿವಿಧ ವಿಶೇಷ ವ್ಯವಸ್ಥೆಗಳು ಸಮನ್ವಯದಿಂದ ಕಾರ್ಯನಿರ್ವಹಿಸಿ ರೈತರಿಗೆ ನೆರವಾಗುತ್ತವೆ.",
       bpTitle: "ಇಂಟರಾಕ್ಟಿವ್ ಬ್ಲೂಪ್ರಿಂಟ್",
-      bpTag: "ಕಿಸಾನ್ ಮಿತ್ರ ಸಿಸ್ಟಮ್ ಆರ್ಕಿಟೆಕ್ಚರ್",
+      bpTag: "Agriva ಸಿಸ್ಟಮ್ ಆರ್ಕಿಟೆಕ್ಚರ್",
       bpClose: "ಬ್ಲೂಪ್ರಿಂಟ್ ಒಪ್ಪಿಕೊಳ್ಳಿ",
       stage1Title: "ಅನ್ ಸ್ಟ್ರಕ್ಚರ್ಡ್ ಇನ್ಪುಟ್ಸ್",
       stage1Desc: "ಧ್ವನಿ ರೆಕಾರ್ಡಿಂಗ್, ಎಲೆಗಳ ಸ್ಕ್ಯಾನ್ ಮತ್ತು ಮಣ್ಣಿನ ತೇವಾಂಶವನ್ನು ಪಡೆಯುತ್ತದೆ.",
@@ -340,7 +340,7 @@ export default function LandingPage() {
       tagline: "खेती होगी स्मार्ट, भविष्य होगा मजबूत.",
       heroTitle1: "વિખરાયેલા ખેતરો.",
       heroTitle2: "એક જ શબ્દકોશ.",
-      heroSub: "જ્યાં પરંપરાગત ખેતી અને સ્વાયત્ત સંચાલન મળે છે. કિસાનમિત્ર જમીનની ટેલિમેટ્રી, સ્થાનિક હવામાન આગાહી અને રોગ નિદાનને એક પ્રગત કૃષિ કંટ્રોલ પેનલમાં રૂપાંતરિત કરે છે.",
+      heroSub: "જ્યાં પરંપરાગત ખેતી અને સ્વાયત્ત સંચાલન મળે છે. Agriva જમીનની ટેલિમેટ્રી, સ્થાનિક હવામાન આગાહી અને રોગ નિદાનને એક પ્રગત કૃષિ કંટ્રોલ પેનલમાં રૂપાંતરિત કરે છે.",
       launchOS: "ફાર્મ OS શરૂ કરો",
       seeFeatures: "વિશેષતાઓ જુઓ",
       capTitle: "સિસ્ટમ ક્ષમતાઓ",
@@ -348,7 +348,7 @@ export default function LandingPage() {
       capDesc: "ખેતી આરોગ્ય અને સુધારણા લોગ સીધા જ મેળવો.",
       howTitle: "પગલાં-દર-પગલાં કેલિબ્રેશન",
       howSubtitle: "ખેતીનું સંચાલન કેવી રીતે કરવું",
-      howDesc: "કિસાનમિત્રની આર્ટિફિશિયલ ઇન્ટેલિજન્સ સંચાલન પદ્ધતિ સમજો.",
+      howDesc: "Agrivaની આર્ટિફિશિયલ ઇન્ટેલિજન્સ સંચાલન પદ્ધતિ સમજો.",
       howBtn: "નકશો અને બ્લુપ્રિન્ટ જુઓ",
       step1Title: "સ્માર્ટ ફાર્મ નોડ બનાવો",
       step1Desc: "નકશા સેટિંગ્સ માટે ગામનું નામ, પાક અને જમીનનું માપ દાખલ કરો.",
@@ -360,7 +360,7 @@ export default function LandingPage() {
       meshSubtitle: "મલ્ટી-એજન્ટ કોઓર્ડિનેશન મેશ",
       meshDesc: "વિવિધ એજન્ટો એકબીજા સાથે જોડાઈને ખેડૂત માટે ભલામણો બનાવે છે.",
       bpTitle: "ઇન્ટરેક્ટિવ બ્લુપ્રિન્ટ",
-      bpTag: "કિસાનમિત્ર સિસ્ટમ આર્કિટેક્ચર",
+      bpTag: "Agriva સિસ્ટમ આર્કિટેક્ચર",
       bpClose: "બ્લુપ્રિન્ટ સ્વીકારો",
       stage1Title: "અસંરચિત ઇનપુટ્સ",
       stage1Desc: "અવાજ નોંધો, પાંદડાના સ્કેન અને જમીનની ભેજ એકત્રિત કરે છે.",
@@ -373,7 +373,7 @@ export default function LandingPage() {
       tagline: "खेती होगी स्मार्ट, भविष्य होगा मजबूत.",
       heroTitle1: "ছড়ানো খামার।",
       heroTitle2: "একটি অভিধান।",
-      heroSub: "যেখানে ঐতিহ্যবাহী চাষ ও স্বয়ংক্রিয় সমন্বয় মিলিত হয়। কিসানমিত্র মাটির টেলিমেট্রি, স্থানীয় আবহাওয়া বার্তা এবং পাতার রোগ বিশ্লেষণকে একত্রিত করে একটি প্রগতিশীল কৃষি ককপিট প্রদান করে।",
+      heroSub: "যেখানে ঐতিহ্যবাহী চাষ ও স্বয়ংক্রিয় সমন্বয় মিলিত হয়। Agriva মাটির টেলিমেট্রি, স্থানীয় আবহাওয়া বার্তা এবং পাতার রোগ বিশ্লেষণকে একত্রিত করে একটি প্রগতিশীল কৃষি ককপিট প্রদান করে।",
       launchOS: "খামার OS চালু করুন",
       seeFeatures: "বৈশিষ্ট্য দেখুন",
       capTitle: "সিস্টেমের ক্ষমতা",
@@ -381,7 +381,7 @@ export default function LandingPage() {
       capDesc: "খামারের স্বাস্থ্য সূচক এবং প্রতিকারের বিবরণ সরাসরি পান।",
       howTitle: "ধাপে ধাপে ক্যালিব্রেশন",
       howSubtitle: "খামার পরিচালনা করার নিয়ম",
-      howDesc: "কিসানমিত্রের এআই-টু-কৃষক কাজের পদ্ধতিটি জানুন।",
+      howDesc: "Agriva-এর এআই-টু-কৃষক কাজের পদ্ধতিটি জানুন।",
       howBtn: "ব্লুপ্রিন্ট ম্যাপ খুলুন",
       step1Title: "স্মার্ট খামার নোড তৈরি করুন",
       step1Desc: "মানচিত্র সেট করতে আপনার গ্রাম, ফসল এবং জমির পরিমাণ লিখুন।",
@@ -393,7 +393,7 @@ export default function LandingPage() {
       meshSubtitle: "মাল্টি-এজেন্ট সমন্বয় নেটওয়ার্ক",
       meshDesc: "বিভিন্ন বিশেষ এজেন্ট সমন্বিতভাবে কাজ করে কৃষককে উপদেশ দেয়।",
       bpTitle: "ইন্টারেক্টিভ ব্লুপ্রিন্ট",
-      bpTag: "কিসানমিত্র সিস্টেম আর্কিটেকচার",
+      bpTag: "Agriva সিস্টেম আর্কিটেকচার",
       bpClose: "ব্লুপ্রিন্ট স্বীকার করুন",
       stage1Title: "অসংগঠিত ইনপুট",
       stage1Desc: "কণ্ঠস্বর রেকর্ড, পাতার ছবি এবং মাটির আর্দ্রতা সংগ্রহ করে।",
@@ -640,7 +640,7 @@ export default function LandingPage() {
           <div className="flex flex-col text-left">
             <span className="text-sm font-black text-white leading-none tracking-wide flex items-center gap-1 font-sans">
               <Sprout className="text-emerald-500" size={16} />
-              Kisaanमित्र
+              Agriva
             </span>
             <span className="text-[8px] font-bold text-zinc-400 mt-0.5 uppercase tracking-wide">
               {t.tagline}
@@ -736,7 +736,7 @@ export default function LandingPage() {
               <div className="p-4 font-mono text-[9.5px] leading-relaxed overflow-x-auto space-y-1.5 h-[210px] text-left select-text scrollbar-thin">
                 {typedLogs.map((log, index) => {
                   let colorClass = "text-zinc-350";
-                  if (log.includes("Kisaanमित्र Core")) colorClass = "text-white font-bold";
+                  if (log.includes("Agriva Core")) colorClass = "text-white font-bold";
                   else if (log.includes("initialized successfully")) colorClass = "text-emerald-300 font-semibold";
                   else if (log.includes("Qdrant vector")) colorClass = "text-cyan-300";
                   else if (log.includes("LangGraph workflow")) colorClass = "text-white font-semibold";
@@ -840,7 +840,7 @@ export default function LandingPage() {
                 </div>
                 <h3 className="text-xs font-bold text-white mb-1.5">Agent-to-Agent Mesh</h3>
                 <p className="text-[10.5px] text-zinc-350 font-semibold leading-normal">
-                  Ask queries in regional languages. Kisaanमित्र automatically orchestrates a flow among 10 agents via compiled LangGraph workflows.
+                  Ask queries in regional languages. Agriva automatically orchestrates a flow among 10 agents via compiled LangGraph workflows.
                 </p>
               </div>
               <div className="flex items-center gap-1.5 text-[8.5px] font-bold text-cyan-400">
@@ -1118,7 +1118,7 @@ export default function LandingPage() {
           
           <div className="space-y-4 text-left">
             <span className="text-[10px] font-bold text-[#10b981] uppercase tracking-widest block font-mono">SECURE INTERFACES</span>
-            <h2 className="text-2xl md:text-3xl font-normal font-serif text-white">Kisaanमित्र in your workspace.</h2>
+            <h2 className="text-2xl md:text-3xl font-normal font-serif text-white">Agriva in your workspace.</h2>
             <p className="text-xs text-zinc-400 leading-relaxed font-semibold max-w-md">
               Connect via Model Context Protocol (MCP) servers and query your farm telemetry, check crop advisories, and ask questions of autonomous agents directly from your developer workspace.
             </p>
@@ -1207,7 +1207,7 @@ export default function LandingPage() {
             <div className="space-y-3 col-span-2 md:col-span-1">
               <div className="flex items-center gap-1.5 text-white font-black">
                 <Sprout size={16} className="text-fuchsia-400" />
-                <span>Kisaanमित्र</span>
+                <span>Agriva</span>
               </div>
               <p className="text-[10px] text-zinc-400 font-semibold leading-relaxed">
                 AI-powered crop disease detection, soil moisture telemetry, and multi-agent coordination for smart Indian farmers.

@@ -96,7 +96,7 @@ export default function Dashboard() {
   });
 
   const [explanationText, setExplanationText] = useState<string>(
-    "[INIT] Kisaanमित्र OS v2.1 ready."
+    "[INIT] Agriva OS v2.1 ready."
   );
 
   const LANGUAGES = [
@@ -581,7 +581,7 @@ export default function Dashboard() {
       const severity = vis.severity || "Moderate";
       const remedy = vis.remedy || "Spray Neem oil, prune lower leaves immediately, and maintain proper crop spacing.";
       
-      const report = `**Kisaanमित्र Autonomous Visual Analysis**\n\n- **Target Scan**: ${target}\n- **Detected Pathogen**: ${disease}\n- **Confidence**: ${confidence}%\n- **Severity**: ${severity}\n\n**Immediate Remedy Action Plan**:\n- **Treatment Protocol**: ${remedy}`;
+      const report = `**Agriva Autonomous Visual Analysis**\n\n- **Target Scan**: ${target}\n- **Detected Pathogen**: ${disease}\n- **Confidence**: ${confidence}%\n- **Severity**: ${severity}\n\n**Immediate Remedy Action Plan**:\n- **Treatment Protocol**: ${remedy}`;
       setExplanationText(report);
     }
 
@@ -629,7 +629,7 @@ export default function Dashboard() {
           >
             <Sprout size={16} className="text-emerald-500 animate-pulse" />
             <div className="flex flex-col leading-none">
-              <span className="font-black text-xs text-white tracking-tight">Kisaanमित्र</span>
+              <span className="font-black text-xs text-white tracking-tight">Agriva</span>
               <span className="text-[7px] font-bold text-emerald-400 font-mono uppercase mt-0.5">
                 {d.tagline}
               </span>
@@ -766,7 +766,7 @@ export default function Dashboard() {
           <div className="flex justify-between items-center border-b border-white/5 pb-4">
             <div className="flex items-center gap-2">
               <Sprout size={16} className="text-emerald-500" />
-              <span className="font-extrabold text-sm text-white">Kisaanमित्र</span>
+              <span className="font-extrabold text-sm text-white">Agriva</span>
             </div>
             <button 
               onClick={() => setIsMobileMenuOpen(false)}
@@ -1339,7 +1339,7 @@ export default function Dashboard() {
                       {explanationText.startsWith("[INIT]") ? (
                         /* Premium Dynamic Terminal Readout - Real-time and Customized! */
                         <div className="font-mono text-[9.5px] text-emerald-450 space-y-2 text-left bg-black/30 p-4 border border-white/5 rounded-2xl">
-                          <div>[SYSTEM] Kisaanमित्र OS v2.1 -- Core Compilation Nominal</div>
+                          <div>[SYSTEM] Agriva OS v2.1 -- Core Compilation Nominal</div>
                           <div className="text-zinc-650">-----------------------------------------------</div>
                           <div>[SESSION] User Profile: <span className="text-white font-semibold">{farmerProfile.farmer_name}</span></div>
                           <div>[SESSION] Location Node: <span className="text-white font-semibold">{farmerProfile.location}</span></div>
@@ -1503,7 +1503,7 @@ export default function Dashboard() {
             </span>
           </div>
           <div className="flex flex-col md:flex-row items-center gap-2 md:gap-4 text-center md:text-right">
-            <span className="text-zinc-500">© 2026 Kisaanमित्र </span>
+            <span className="text-zinc-500">© 2026 Agriva </span>
             <span className="text-emerald-400 font-extrabold uppercase bg-black/60 px-2 py-0.5 rounded border border-white/5">
               PERSISTENT_NODE // active
             </span>
