@@ -134,6 +134,7 @@ jokes, recipes, or other unrelated content.
     )
 
     answer = completion.choices[0].message.content
+    print(f"[Chatbot] User Query: {request.query}\n[Chatbot] Response: {answer}")
 
     return {
         "answer": answer

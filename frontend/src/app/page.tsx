@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import Image from 'next/image';
 import { 
   Sprout, 
   ArrowRight, 
@@ -639,7 +640,13 @@ export default function LandingPage() {
         <nav className="glass-panel px-6 py-2.5 flex justify-between items-center bg-[#090d0a]/80 border border-white/10 rounded-full shadow-lg relative z-50">
           <div className="flex flex-col text-left">
             <span className="text-sm font-black text-white leading-none tracking-wide flex items-center gap-1 font-sans">
-              <Sprout className="text-emerald-500" size={16} />
+              <Image
+                src="/logo.png"
+                alt="Agriva logo"
+                width={24}
+                height={24}
+                className="h-6 w-6 rounded object-cover"
+              />
               Agriva
             </span>
             <span className="text-[8px] font-bold text-zinc-400 mt-0.5 uppercase tracking-wide">
@@ -1206,7 +1213,13 @@ export default function LandingPage() {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6 text-left text-xs font-sans">
             <div className="space-y-3 col-span-2 md:col-span-1">
               <div className="flex items-center gap-1.5 text-white font-black">
-                <Sprout size={16} className="text-fuchsia-400" />
+                <Image
+                  src="/logo.png"
+                  alt="Agriva logo"
+                  width={24}
+                  height={24}
+                  className="h-6 w-6 rounded object-cover"
+                />
                 <span>Agriva</span>
               </div>
               <p className="text-[10px] text-zinc-400 font-semibold leading-relaxed">
