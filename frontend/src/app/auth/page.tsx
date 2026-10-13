@@ -545,12 +545,6 @@ export default function AuthPage() {
             </button>
           </form>
 
-          <div className="text-center mt-6 pt-4 border-t border-emerald-500/5">
-            <Link href="/developers" className="text-[10px] font-mono font-bold text-emerald-500/50 hover:text-emerald-400 transition-colors uppercase tracking-widest">
-              System Core // Meet the Developers
-            </Link>
-          </div>
-
         </div>
       </div>
       
