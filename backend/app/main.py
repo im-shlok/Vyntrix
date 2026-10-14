@@ -299,15 +299,32 @@ Return ONLY valid JSON in this shape:
     except Exception as exc:
         return {}, str(exc)
 
-def calculate_vision_severity(confidence: float) -> str:
-    """Map the detector confidence score to the severity shown in the UI."""
+VISION_SEVERITY_TRANSLATIONS = {
+    "en": {"Low": "Low", "Moderate": "Moderate", "High": "High", "Critical": "Critical"},
+    "hi": {"Low": "कम", "Moderate": "मध्यम", "High": "उच्च", "Critical": "गंभीर"},
+    "pa": {"Low": "ਘੱਟ", "Moderate": "ਦਰਮਿਆਨਾ", "High": "ਉੱਚ", "Critical": "ਗੰਭੀਰ"},
+    "mr": {"Low": "कमी", "Moderate": "मध्यम", "High": "उच्च", "Critical": "गंभीर"},
+    "te": {"Low": "తక్కువ", "Moderate": "మధ్యస్థ", "High": "అధిక", "Critical": "తీవ్రమైన"},
+    "ta": {"Low": "குறைவு", "Moderate": "மிதமான", "High": "அதிகம்", "Critical": "மிகவும் தீவிரம்"},
+    "kn": {"Low": "ಕಡಿಮೆ", "Moderate": "ಮಧ್ಯಮ", "High": "ಹೆಚ್ಚು", "Critical": "ಗಂಭೀರ"},
+    "gu": {"Low": "ઓછું", "Moderate": "મધ્યમ", "High": "વધુ", "Critical": "ગંભીર"},
+    "bn": {"Low": "কম", "Moderate": "মাঝারি", "High": "উচ্চ", "Critical": "গুরুতর"},
+    "ml": {"Low": "കുറവ്", "Moderate": "മിതമായ", "High": "ഉയർന്ന", "Critical": "ഗുരുതരം"},
+    "or": {"Low": "କମ୍", "Moderate": "ମଧ୍ୟମ", "High": "ଉଚ୍ଚ", "Critical": "ଗୁରୁତର"},
+}
+
+def calculate_vision_severity(confidence: float, language: str) -> tuple[str, str]:
+    """Map confidence to a stable severity key and localized display value."""
     if confidence >= 0.80:
-        return "Critical"
-    if confidence >= 0.60:
-        return "High"
-    if confidence >= 0.40:
-        return "Moderate"
-    return "Low"
+        severity_key = "Critical"
+    elif confidence >= 0.60:
+        severity_key = "High"
+    elif confidence >= 0.40:
+        severity_key = "Moderate"
+    else:
+        severity_key = "Low"
+    translated = VISION_SEVERITY_TRANSLATIONS.get(language, VISION_SEVERITY_TRANSLATIONS["en"])
+    return severity_key, translated[severity_key]
 
 LANGUAGE_NAMES = {
     "en": "English",
@@ -586,7 +603,12 @@ async def analyze_crop_image(
         )
         for detection in raw_detections:
             advice = advice_by_label.get(detection["label"], {})
-            detection["severity"] = calculate_vision_severity(detection["confidence"])
+            severity_key, localized_severity = calculate_vision_severity(
+                detection["confidence"],
+                language,
+            )
+            detection["severity"] = localized_severity
+            detection["severity_key"] = severity_key
             detection["remedy"] = advice.get(
                 "treatment",
                 "No AI treatment guidance was available; confirm the diagnosis with a local agricultural expert.",
