@@ -13,11 +13,12 @@ export default function VisionAnalysis({ onAnalyzeComplete, activeLanguage }: Vi
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState<boolean>(false);
   const [analysisResult, setAnalysisResult] = useState<any>(null);
+  const [analysisError, setAnalysisError] = useState<string | null>(null);
 
   const labels: any = {
     en: {
       title: "Leaf & Crop AI Analyzer",
-      description: "YOLOv11 & SAM2 Plant Tissue Diagnostic",
+      description: "YOLOv8s Leaf Detection",
       dragText: "Drop leaf image or click to browse",
       analyzing: "Scanning plant tissues...",
       confidence: "Confidence Score",
@@ -139,6 +140,17 @@ export default function VisionAnalysis({ onAnalyzeComplete, activeLanguage }: Vi
   };
 
   const t = labels[activeLanguage] || labels["en"];
+  const displayedDetections = analysisResult?.detections
+    ? Object.values(
+        analysisResult.detections.reduce((grouped: Record<string, any>, detection: any) => {
+          const current = grouped[detection.label];
+          if (!current || detection.confidence > current.confidence) {
+            grouped[detection.label] = detection;
+          }
+          return grouped;
+        }, {})
+      )
+    : [];
 
   const handleDrag = (e: React.DragEvent) => {
     e.preventDefault();
@@ -167,61 +179,63 @@ export default function VisionAnalysis({ onAnalyzeComplete, activeLanguage }: Vi
   };
 
   const processImage = async (file: File) => {
+    if (!file.type.startsWith("image/")) {
+      setAnalysisError("Please select a JPG, PNG, or WEBP image.");
+      return;
+    }
+
     setSelectedImage(URL.createObjectURL(file));
     setIsAnalyzing(true);
     setAnalysisResult(null);
+    setAnalysisError(null);
 
     const formData = new FormData();
     formData.append("file", file);
 
     try {
-      const res = await fetch("http://localhost:8000/api/vision/analyze", {
+      const apiBaseUrl = process.env.NEXT_PUBLIC_BACKEND_API_URL || "http://localhost:8000";
+      const res = await fetch(`${apiBaseUrl}/api/vision/analyze`, {
         method: "POST",
         body: formData
       });
 
-      if (!res.ok) throw new Error("Offline sandbox");
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => null);
+        throw new Error(errorData?.detail || "Vision analysis failed.");
+      }
       
       const data = await res.json();
-      setTimeout(() => {
-        setAnalysisResult({
-          image_url: `http://localhost:8000${data.image_url}`,
-          detections: data.detections
-        });
-        setIsAnalyzing(false);
-        onAnalyzeComplete(data);
-      }, 1500);
+      setAnalysisResult({
+        image_url: data.image_url.startsWith("http")
+          ? data.image_url
+          : `${apiBaseUrl}${data.image_url}`,
+        detections: data.detections || [],
+        device: data.device,
+        model: data.model
+      });
+      setIsAnalyzing(false);
+      const firstDetection = data.detections?.[0];
+      onAnalyzeComplete({
+        ...data,
+        vision_results: firstDetection ? {
+          target: "Detected leaf",
+          disease: firstDetection.label,
+          confidence: firstDetection.confidence,
+          severity: firstDetection.severity,
+          remedy: firstDetection.remedy
+        } : undefined
+      });
 
     } catch (err) {
-      setTimeout(() => {
-        const mockResult = {
-          image_url: null,
-          detections: [
-            {
-              label: "Tomato Early Blight (Fungal)",
-              confidence: 0.91,
-              bbox: [20, 25, 60, 50],
-              severity: "Moderate",
-              remedy: "Spray Neem oil, prune lower leaves immediately, and maintain proper crop spacing."
-            }
-          ]
-        };
-        setAnalysisResult(mockResult);
-        setIsAnalyzing(false);
-        onAnalyzeComplete({
-          vision_results: {
-            target: "Tomato Leaf",
-            disease: "Early Blight (Fungal)",
-            confidence: 0.91
-          }
-        });
-      }, 2000);
+      setIsAnalyzing(false);
+      setAnalysisError(err instanceof Error ? err.message : "Vision analysis failed.");
     }
   };
 
   const resetUpload = () => {
     setSelectedImage(null);
     setAnalysisResult(null);
+    setAnalysisError(null);
   };
 
   return (
@@ -281,7 +295,7 @@ export default function VisionAnalysis({ onAnalyzeComplete, activeLanguage }: Vi
             {/* Visual HUD Overlay Column */}
             <div className="relative md:col-span-5 w-full h-60 bg-[#020302] rounded-2xl overflow-hidden border border-white/10 shrink-0 shadow-inner group">
               <img 
-                src={selectedImage} 
+                src={analysisResult.image_url || selectedImage}
                 alt="Leaf scan result" 
                 className="w-full h-full object-contain" 
               />
@@ -296,30 +310,11 @@ export default function VisionAnalysis({ onAnalyzeComplete, activeLanguage }: Vi
                 {t.hudTitle}
               </div>
 
-              {analysisResult.detections.map((det: any, i: number) => {
-                const [top, left, width, height] = det.bbox;
-                return (
-                  <div 
-                    key={i}
-                    className="absolute border border-red-500 bg-red-500/15 rounded-md shadow-[0_0_12px_rgba(239,68,68,0.6)] animate-pulse"
-                    style={{
-                      top: `${top}%`,
-                      left: `${left}%`,
-                      width: `${width}%`,
-                      height: `${height}%`,
-                    }}
-                  >
-                    <span className="absolute -top-5 left-0 bg-red-600 text-white font-mono font-bold text-[8px] px-1.5 py-0.5 rounded shadow-lg whitespace-nowrap border border-red-400">
-                      {det.label} ({(det.confidence * 100).toFixed(0)}%)
-                    </span>
-                  </div>
-                );
-              })}
             </div>
 
             {/* Analysis Text & Remedy Column */}
             <div className="md:col-span-7 space-y-3">
-              {analysisResult.detections.map((det: any, i: number) => (
+              {displayedDetections.map((det: any, i: number) => (
                 <div key={i} className="bg-fuchsia-955/10 border border-white/5 rounded-2xl p-4 space-y-3.5 font-mono text-left relative overflow-hidden">
                   <div className="absolute top-0 right-0 w-24 h-24 bg-fuchsia-500/[0.02] rounded-full blur-2xl pointer-events-none" />
                   
@@ -354,6 +349,20 @@ export default function VisionAnalysis({ onAnalyzeComplete, activeLanguage }: Vi
                 </div>
               ))}
             </div>
+          </div>
+        )}
+
+        {selectedImage && !isAnalyzing && displayedDetections.length === 0 && (
+          <div className="w-full min-h-[280px] flex flex-col items-center justify-center rounded-2xl border border-amber-500/20 bg-amber-950/10 p-8 text-center">
+            <AlertTriangle className="text-amber-400 mb-3" size={24} />
+            <p className="text-sm font-bold text-amber-300">No leaf detected in this image.</p>
+            <p className="text-[10px] text-zinc-500 mt-2">Try a clear photo with the leaf fully visible.</p>
+          </div>
+        )}
+
+        {analysisError && (
+          <div className="mt-4 rounded-xl border border-red-500/30 bg-red-950/20 p-3 text-xs font-medium text-red-300">
+            {analysisError}
           </div>
         )}
       </div>

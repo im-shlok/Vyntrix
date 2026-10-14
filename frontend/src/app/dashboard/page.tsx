@@ -28,6 +28,7 @@ import {
 } from 'lucide-react';
 import FarmMap from '@/components/dashboard/FarmMap';
 import VoiceAssistant from '@/components/dashboard/VoiceAssistant';
+import VisionAnalysis from '@/components/dashboard/VisionAnalysis';
 import Marketprice from '@/components/dashboard/Marketprice';
 import EmergencySOS from '@/components/dashboard/EmergencySOS';
 import GovernmentSchemes from '@/components/dashboard/GovernmentSchemes';
@@ -1336,6 +1337,12 @@ export default function Dashboard() {
           {activeTab === "diagnostics" && (
             <div className="grid grid-cols-1 gap-6 items-start pb-8 text-left">
               
+              {/* Plant image analysis */}
+              <VisionAnalysis
+                onAnalyzeComplete={handleAgentTrigger}
+                activeLanguage={activeLanguage}
+              />
+
               {/* Voice Input & Smart Advisory Output Stacks */}
               <div className="flex flex-col gap-6 w-full">
                 <VoiceAssistant 

@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import Image from 'next/image';
 import { Sprout, User, Lock, MapPin, LandPlot, AlertCircle, ArrowRight, CheckCircle2, Terminal, Network, Phone, Home, Mic, Keyboard } from 'lucide-react';
 import Preloader from '@/components/ui/Preloader';
 
@@ -291,10 +292,14 @@ export default function AuthPage() {
         
         {/* Logo header */}
         <div className="flex items-center gap-2">
-          <div className="bg-gradient-to-tr from-emerald-500 to-emerald-700 p-2 rounded-xl text-white shadow-md shadow-emerald-950/50">
-            <Sprout size={20} />
-          </div>
-          <span className="font-extrabold text-lg text-white tracking-tight">Agriva</span>
+          <Image
+            src="/logo.png"
+            alt="Agriva logo"
+            width={112}
+            height={32}
+            className="h-8 w-auto object-contain"
+            priority
+          />
         </div>
 
         {/* Floating Console Code logs */}
@@ -345,9 +350,14 @@ export default function AuthPage() {
           
           {/* Header */}
           <div className="text-center mb-6">
-            <div className="w-12 h-12 rounded-2xl bg-emerald-950 border border-emerald-500/30 flex items-center justify-center text-emerald-400 mx-auto mb-3 shadow-inner">
-              <Sprout size={24} />
-            </div>
+            <Image
+              src="/logo.png"
+              alt="Agriva logo"
+              width={112}
+              height={32}
+              className="h-8 w-auto object-contain mx-auto mb-3"
+              priority
+            />
             <h2 className="text-xl font-black text-white tracking-tight">Farm OS Console</h2>
             
             {/* Flashing Mic command info / Click manual startup */}

@@ -3,6 +3,7 @@ import shutil
 import json
 import hashlib
 import datetime
+import uuid
 from urllib.error import HTTPError, URLError
 from urllib.parse import urlencode, quote
 from urllib.request import Request, urlopen
@@ -15,6 +16,14 @@ from fastapi import FastAPI, UploadFile, File, Form, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
+import cv2
+import numpy as np
+try:
+    import torch
+    from ultralytics import YOLO
+except ImportError:
+    torch = None
+    YOLO = None
 import re
 from typing import Dict, Any, Optional
 
@@ -48,6 +57,14 @@ app.add_middleware(
 STATIC_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "static")
 VOICE_DIR = os.path.join(STATIC_DIR, "voice")
 UPLOAD_DIR = os.path.join(STATIC_DIR, "uploads")
+MODEL_PATH = os.path.join(
+    os.path.dirname(os.path.abspath(__file__)),
+    "agents",
+    "models",
+    "best.pt",
+)
+VISION_DEVICE = 0 if torch is not None and torch.cuda.is_available() else "cpu"
+vision_model: Optional[Any] = None
 os.makedirs(VOICE_DIR, exist_ok=True)
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
@@ -61,6 +78,18 @@ app.include_router(mcp_router)
 def on_startup():
     print("[Startup] Initializing persistent SQLAlchemy tables...")
     init_db()
+    global vision_model
+    if YOLO is None:
+        print("[Startup] Vision dependencies are unavailable; install backend requirements.")
+    elif not os.path.isfile(MODEL_PATH):
+        print(f"[Startup] Vision model not found: {MODEL_PATH}")
+    else:
+        try:
+            vision_model = YOLO(MODEL_PATH)
+            print(f"[Startup] YOLO vision model loaded on device {VISION_DEVICE}.")
+        except Exception as exc:
+            vision_model = None
+            print(f"[Startup] Failed to load YOLO vision model: {exc}")
     print("[Startup] Initializing Qdrant vector semantic collections...")
     seed_qdrant_knowledge()
     
@@ -432,61 +461,62 @@ def chat_endpoint(request: ChatRequest):
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/api/vision/analyze")
-def analyze_crop_image(file: UploadFile = File(...)):
-    """Handles plant analysis and returns YOLOv11 bounding box detections."""
-    filename = f"crop_{file.filename}"
-    file_path = os.path.join(UPLOAD_DIR, filename)
-    
-    with open(file_path, "wb") as buffer:
-        shutil.copyfileobj(file.file, buffer)
-        
-    lower_name = file.filename.lower()
-    label = "Tomato Early Blight (Fungal)"
-    severity = "Moderate"
-    remedy = "Spray Neem oil, prune lower leaves immediately, and maintain proper crop spacing."
-    
-    if "rice" in lower_name or "blast" in lower_name or "dhan" in lower_name:
-        label = "Rice Blast (Fungal)"
-        severity = "High"
-        remedy = "Spray Tricyclazole fungicide, avoid excessive nitrogen fertilization, and maintain proper flooding levels."
-    elif "wheat" in lower_name or "rust" in lower_name or "kanak" in lower_name:
-        label = "Wheat Leaf Rust (Fungal)"
-        severity = "High"
-        remedy = "Apply Propiconazole fungicide, sow rust-resistant seed variants, and optimize crop spacing."
-    elif "potato" in lower_name or "late" in lower_name or "blight" in lower_name:
-        label = "Potato Late Blight (Fungal)"
-        severity = "Critical"
-        remedy = "Apply Metalaxyl fungicide immediately, destroy infected tubers, and avoid overhead sprinkler irrigation."
-    elif "cotton" in lower_name or "spot" in lower_name or "kapas" in lower_name:
-        label = "Cotton Cercospora Leaf Spot"
-        severity = "Low"
-        remedy = "Apply Copper-based spray formulations, plow under crop residues post-harvest, and rotate crops."
-    elif "onion" in lower_name or "purple" in lower_name or "blotch" in lower_name:
-        label = "Onion Purple Blotch"
-        severity = "Moderate"
-        remedy = "Spray Chlorothalonil or Mancozeb, ensure good field drainage, and allow a 3-year crop rotation."
-    else:
-        # Fallback to dynamic classification from filename prefix
-        base_name = os.path.splitext(file.filename)[0].replace("-", " ").replace("_", " ").title()
-        if len(base_name) > 3:
-            label = f"{base_name} Pathogen Detection"
-        else:
-            label = "General Crop Spot Infection"
-        severity = "Moderate"
-        remedy = "Maintain organic compost cycles, spray diluted neem oil solution, and monitor daily progress."
+async def analyze_crop_image(file: UploadFile = File(...)):
+    """Run the startup-loaded YOLO leaf detector and return an annotated image."""
+    if vision_model is None:
+        raise HTTPException(status_code=503, detail="Vision model is unavailable.")
 
-    return {
-        "image_url": f"/static/uploads/{filename}",
-        "detections": [
-            {
-                "label": label,
-                "confidence": 0.88,
-                "bbox": [15, 20, 50, 45],
-                "severity": severity,
-                "remedy": remedy
-            }
-        ]
-    }
+    allowed_types = {"image/jpeg", "image/png", "image/webp"}
+    if file.content_type not in allowed_types:
+        raise HTTPException(status_code=415, detail="Upload a JPG, PNG, or WEBP image.")
+
+    image_bytes = await file.read()
+    image = cv2.imdecode(np.frombuffer(image_bytes, dtype=np.uint8), cv2.IMREAD_COLOR)
+    if image is None:
+        raise HTTPException(status_code=400, detail="The uploaded file is not a valid image.")
+
+    try:
+        height, width = image.shape[:2]
+        results = vision_model.predict(source=image, device=VISION_DEVICE, verbose=False)
+        result = results[0]
+        detections = []
+        if result.boxes is not None:
+            names = result.names
+            for box in result.boxes:
+                x1, y1, x2, y2 = box.xyxy[0].cpu().tolist()
+                confidence = float(box.conf[0].cpu().item())
+                class_id = int(box.cls[0].cpu().item())
+                label = names.get(class_id, str(class_id)) if isinstance(names, dict) else str(class_id)
+                detections.append({
+                    "label": label,
+                    "confidence": confidence,
+                    "bbox": [
+                        (y1 / height) * 100,
+                        (x1 / width) * 100,
+                        ((x2 - x1) / width) * 100,
+                        ((y2 - y1) / height) * 100,
+                    ],
+                    "bbox_pixels": [x1, y1, x2, y2],
+                    "severity": "Moderate",
+                    "remedy": "Review the affected area and follow local agricultural guidance.",
+                })
+
+        annotated_image = result.plot()
+        output_name = f"vision_{uuid.uuid4().hex}.jpg"
+        output_path = os.path.join(UPLOAD_DIR, output_name)
+        if not cv2.imwrite(output_path, annotated_image):
+            raise RuntimeError("Could not write the annotated image.")
+
+        return {
+            "image_url": f"/static/uploads/{output_name}",
+            "detections": detections,
+            "device": str(VISION_DEVICE),
+            "model": os.path.basename(MODEL_PATH),
+        }
+    except HTTPException:
+        raise
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f"Vision inference failed: {exc}") from exc
 
 
 recognizer = sr.Recognizer()
