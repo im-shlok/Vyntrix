@@ -28,7 +28,47 @@ Built using a stateful LangGraph Multi-Agent network on the backend and Next.js 
 
 - **Frontend**: Next.js 16 (App Router), Webpack Compiler, TailwindCSS, Lucide Icons, HTML5 Geolocation API, Web Speech API.
 - **Backend**: FastAPI, LangGraph (Stateful Agent Workflows), SQLAlchemy (Persistent user memory profiles), SQLite (Local fallback storage), Redis (Telemetry caching fallback), Qdrant Vector Database (Cosine similarity semantic RAG searching).
+- **Retrieval (RAG)**: NVIDIA NIM `baai/bge-m3` multilingual embeddings fused with local BM25 via Reciprocal Rank Fusion. Qdrant is the vector store when reachable, with an in-memory numpy index as fallback; document vectors are cached on disk so restarts cost no API quota. See [RAG pipeline](#-rag-pipeline).
 - **Infrastructure**: Docker & Docker Compose (Redis + Qdrant services for local development).
+
+---
+
+## 🔎 RAG Pipeline
+
+Retrieval grounds the advisory text farmers actually read, rather than sitting
+beside it. The corpus is built on startup from every seed source — agronomy
+advisories, government schemes, first-aid protocols, disaster guides, tutorials
+and quiz explanations — plus any markdown under `backend/data/corpus/`.
+
+**Hybrid search.** Dense embeddings handle paraphrase and cross-language
+matching, which an 11-language app needs: a Hindi query matches an English ICAR
+document directly, with no translation step. BM25 handles the exact terms dense
+retrieval is weakest at — `PM-KISAN`, `Mancozeb`, `Alternaria solani`. Results
+are fused by rank, so the two score scales never need to be comparable.
+
+**Where retrieval is applied.**
+
+| Surface | Use |
+|---|---|
+| Knowledge agent | Retrieves grounding documents for the query |
+| Explanation agent | Injects them into the generation prompt with `[n]` citations |
+| Vision advice | Grounds treatment guidance for detected YOLO labels |
+| Healthcare / Disaster / Education | Selects the applicable guide semantically |
+| Planner | Routes intent by embedding similarity, keywords as fallback |
+
+**Graceful degradation.** Losing Qdrant falls back to an in-memory index;
+losing the embedding API falls back to BM25-only retrieval. `retrieval_mode` in
+`/api/rag/status` reports which path is active, so a degraded backend is
+visible instead of looking like a quality regression.
+
+Adding real reference material is a matter of dropping markdown into
+`backend/data/corpus/<category>/` and restarting — see the
+[corpus README](./backend/data/corpus/README.md).
+
+```bash
+curl "http://localhost:8000/api/rag/status"
+curl "http://localhost:8000/api/rag/search?q=yellow+spots+on+tomato+leaves"
+```
 
 ---
 

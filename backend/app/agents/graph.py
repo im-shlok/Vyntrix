@@ -5,9 +5,10 @@ from app.agents.state import AgentState
 from app.agents.agents import (
     planner_agent, agriculture_agent, vision_agent, weather_agent,
     soil_agent, marketplace_agent, government_agent, healthcare_agent,
-    disaster_agent, education_agent, memory_agent, knowledge_agent,
+    disaster_agent, education_agent, memory_agent,
     explanation_agent
 )
+from app.agents.knowledge import knowledge_agent
 
 # Wrapper nodes to update the current_agent tracking variable during execution
 def make_node(agent_fn, agent_name: str):

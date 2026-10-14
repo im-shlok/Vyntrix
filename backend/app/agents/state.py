@@ -11,6 +11,17 @@ class AgentState(BaseModel):
     current_agent: str = "planner"
     execution_plan: List[str] = Field(default_factory=list)
     llm_already_called: bool = False
+
+    # Retrieval (RAG)
+    # Documents retrieved for this query. The explanation agent injects these
+    # into the generation prompt, which is what makes the pipeline genuinely
+    # retrieval-augmented rather than just labelled as such.
+    retrieved_docs: List[Dict[str, Any]] = Field(default_factory=list)
+    # Computed once by the planner and reused by every downstream agent, so one
+    # request costs a single embedding call no matter how many agents retrieve.
+    query_vector: Optional[List[float]] = None
+    # "semantic" or "keyword" - which router produced execution_plan.
+    routing_mode: str = "keyword"
     
     # Specialized outputs from each agent
     vision_results: Optional[Dict[str, Any]] = None

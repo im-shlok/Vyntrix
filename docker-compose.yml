@@ -12,7 +12,11 @@ services:
       - DATABASE_URL=postgresql://kisaan_user:kisaan_pass@db:5432/kisaan_db
       - REDIS_URL=redis://redis:6379/0
       - QDRANT_URL=http://qdrant:6333
-      - OLLAMA_HOST=http://host.docker.internal:11434
+      # Required for both the advisory LLM and the RAG embedding model.
+      # Taken from the host environment or backend/.env; never commit the key.
+      - NVIDIA_API_KEY=${NVIDIA_API_KEY}
+      - GOV_API_KEY=${GOV_API_KEY}
+      - EMBED_MODEL=${EMBED_MODEL:-baai/bge-m3}
     depends_on:
       - db
       - redis

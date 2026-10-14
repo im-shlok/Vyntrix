@@ -11,7 +11,6 @@ from gtts import gTTS
 from dotenv import load_dotenv
 import speech_recognition as sr
 from pydub import AudioSegment
-from openai import OpenAI
 from fastapi import FastAPI, UploadFile, File, Form, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
@@ -35,7 +34,9 @@ from app.core.database import (
     TelemetrySnapshot
 )
 from app.core.redis_client import redis_client
-from app.agents.knowledge import seed_qdrant_knowledge
+from app.core.llm_client import get_client
+from app.rag import get_status as rag_status
+from app.rag import index_corpus, intent_scores, retrieve, warm_up_intents
 from app.agents.graph import compiled_graph
 from app.agents.state import AgentState
 from app.mcp.mcp_server import mcp_router
@@ -90,8 +91,17 @@ def on_startup():
         except Exception as exc:
             vision_model = None
             print(f"[Startup] Failed to load YOLO vision model: {exc}")
-    print("[Startup] Initializing Qdrant vector semantic collections...")
-    seed_qdrant_knowledge()
+    print("[Startup] Building RAG corpus and vector index...")
+    try:
+        status = index_corpus()
+        warm_up_intents()
+        print(
+            f"[Startup] RAG ready: {status['documents_indexed']} documents, "
+            f"mode={status['retrieval_mode']}, store={status['vector_store']}."
+        )
+    except Exception as exc:
+        # Retrieval degrades to lexical on its own; never block startup for it.
+        print(f"[Startup] RAG indexing failed: {exc}")
     
     # Restore the persisted telemetry snapshot into the fast Redis cache.
     cached_iot = redis_client.hgetall("telemetry")
@@ -229,10 +239,7 @@ def resolve_location(request: LocationResolveRequest):
     finally:
         db.close()
 
-client = OpenAI(
-    base_url="https://integrate.api.nvidia.com/v1",
-    api_key=os.getenv("NVIDIA_API_KEY", "")
-)
+client = get_client()
 
 VISION_LANGUAGE_NAMES = {
     "en": "English",
@@ -248,14 +255,50 @@ VISION_LANGUAGE_NAMES = {
     "or": "Odia",
 }
 
+def normalize_vision_label(label: str) -> str:
+    """Turn a YOLO class name into natural language for retrieval.
+
+    Dataset labels arrive as "Tomato___Early_blight" or "tomato_late_blight",
+    which match nothing in a prose corpus until the separators are stripped.
+    """
+    cleaned = re.sub(r"_{2,}", " ", label)
+    cleaned = cleaned.replace("_", " ").replace("-", " ")
+    return re.sub(r"\s+", " ", cleaned).strip()
+
+
 def get_vision_advice(labels: list[str], language: str) -> tuple[dict[str, dict[str, str]], Optional[str]]:
     """Generate cautious, crop-specific treatment guidance for detections."""
     language_name = VISION_LANGUAGE_NAMES.get(language, "English")
+
+    # Ground the advice in retrieved agronomy documents. Without this the model
+    # is told "do not invent a disease" while being given nothing to work from.
+    reference_block = ""
+    try:
+        references = []
+        seen_ids = set()
+        for label in labels:
+            for document in retrieve(normalize_vision_label(label), limit=2,
+                                     category="agronomy"):
+                if document.id in seen_ids:
+                    continue
+                seen_ids.add(document.id)
+                references.append(f"({document.source}) {document.text}")
+        if references:
+            reference_block = (
+                "\nUse the following retrieved reference material as the "
+                "authoritative basis for your guidance. Prefer it over your "
+                "own prior knowledge, and do not contradict it:\n"
+                + "\n".join(f"- {reference}" for reference in references)
+                + "\n"
+            )
+    except Exception as exc:
+        print(f"[Vision] Retrieval unavailable, advising without grounding: {exc}")
+
     prompt = f"""
 You are Agriva, an agricultural plant-health advisor.
 The computer vision model detected these labels in a crop image:
 {json.dumps(labels, ensure_ascii=False)}
-
+{reference_block}
 For every label, return practical guidance in {language_name}. A label may be a
 crop or plant class rather than a confirmed disease. Do not invent a disease:
 when uncertain, say that field confirmation is needed. Recommend only applicable
@@ -488,6 +531,8 @@ def chat_endpoint(request: ChatRequest):
             tutorials = final_state.get("tutorials", [])
             explanation = final_state.get("explanation", "")
             profile = final_state.get("farmer_profile", {})
+            retrieved_docs = final_state.get("retrieved_docs", [])
+            routing_mode = final_state.get("routing_mode", "keyword")
         else:
             plan = final_state.execution_plan
             vision = final_state.vision_results
@@ -500,7 +545,10 @@ def chat_endpoint(request: ChatRequest):
             tutorials = final_state.tutorials
             explanation = final_state.explanation
             profile = final_state.farmer_profile
+            retrieved_docs = final_state.retrieved_docs
+            routing_mode = final_state.routing_mode
 
+        explanation = re.sub(r"\[\d+\]", "", explanation)
         if request.need_audio:
             speech_filename = f"response_{request.language}.mp3"
             speech_output_path = os.path.join(VOICE_DIR, speech_filename)
@@ -524,6 +572,8 @@ def chat_endpoint(request: ChatRequest):
             "tutorials": tutorials,
             "explanation": explanation,
             "profile": profile,
+            "retrieved_docs": retrieved_docs,
+            "routing_mode": routing_mode,
             "speech_url": speech_url if request.need_audio else None
         }
 
@@ -801,6 +851,43 @@ def update_telemetry(data: TelemetryUpdate):
 
     return {"status": "success", "cached_telemetry": redis_client.hgetall("telemetry")}
 
+@app.get("/api/rag/status")
+def rag_status_endpoint():
+    """Report what the retriever actually indexed and which mode it is in.
+
+    `retrieval_mode` is the field to watch: "lexical" means dense retrieval is
+    unavailable and results are BM25-only, which otherwise looks like a quality
+    regression rather than a degraded backend.
+    """
+    return rag_status()
+
+
+@app.get("/api/rag/search")
+def rag_search_endpoint(
+    q: str,
+    category: Optional[str] = None,
+    limit: int = 4,
+    explain_routing: bool = False,
+):
+    """Inspect retrieval directly, without going through the agent graph."""
+    if not q.strip():
+        raise HTTPException(status_code=422, detail="Query 'q' is required")
+    limit = max(1, min(limit, 20))
+
+    documents = retrieve(q, limit=limit, category=category)
+    payload = {
+        "query": q,
+        "category": category,
+        "count": len(documents),
+        "results": [document.to_dict() for document in documents],
+    }
+    if explain_routing:
+        # Per-intent cosine scores behind the planner's routing decision.
+        from app.rag import embed_query as _embed_query
+        payload["intent_scores"] = intent_scores(_embed_query(q))
+    return payload
+
+
 @app.get("/api/marketplace/prices")
 def get_mandi_prices():
     return MANDI_PRICES
@@ -845,6 +932,9 @@ def get_mandi_records():
 
 
 def clean_text_for_tts(text: str) -> str:
+    # Strip citation markers so gTTS does not read "[1]" aloud as "one"
+    text = re.sub(r"\[\d+\]", "", text)
+
     # Remove Markdown bold and italic markers
     text = re.sub(r"\*{1,3}(.*?)\*{1,3}", r"\1", text)
 

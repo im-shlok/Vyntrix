@@ -4,9 +4,11 @@ import urllib.error
 from typing import Dict, Any, List
 from app.core.seed_data import (
     MANDI_PRICES, GOVERNMENT_SCHEMES, HEALTHCARE_GUIDES,
-    DISASTER_GUIDES, EDUCATION_TUTORIALS, QUIZZES, KNOWLEDGE_BASE
+    DISASTER_GUIDES, EDUCATION_TUTORIALS, QUIZZES
 )
 from app.agents.state import AgentState
+from app.rag import CATEGORY_DISASTER, CATEGORY_EDUCATION, CATEGORY_HEALTH
+from app.rag import embed_query, retrieve, route_intent
 
 # Calls the new chatbot api directly instead of using gemini
 def call_chatbot_api(
@@ -68,12 +70,10 @@ def fetch_realtime_weather(lat: float, lng: float) -> dict:
 
 
 # 1. Planner Agent
-def planner_agent(state: AgentState) -> Dict[str, Any]:
-    query = state.user_query.lower()
+# Keyword routing is retained as the fallback path for when semantic routing is
+# unavailable (no embedder) or not confident enough to act on.
+def _keyword_plan(query: str) -> List[str]:
     plan = []
-
-    if "telemetry status" in query or "overview" in query or "टेलीमेट्री" in query or "अवलोकन" in query:
-        plan.extend(["weather", "soil", "market", "government", "agriculture"])
 
     # Disease / vision keywords (English + Hindi + Punjabi + Tamil + Telugu + others)
     disease_kw = [
@@ -254,17 +254,60 @@ def planner_agent(state: AgentState) -> Dict[str, Any]:
     if not plan:
         plan.extend(["vision", "agriculture", "weather"])
 
-    # Always include memory lookup and explanation aggregation
-    raw_plan = [p for p in plan if p != "memory" and p != "explanation"]
-    plan = ["memory"] + list(dict.fromkeys(raw_plan)) + ["explanation"]
+    return plan
 
-   # explanation_log = f"Planner recognized intent. Routed workflow sequence: {' -> '.join(plan)} -> Complete Action Plan."
+
+def _finalize_plan(plan: List[str]) -> List[str]:
+    """Always bracket the plan with memory lookup and explanation aggregation."""
+    raw_plan = [p for p in plan if p not in ("memory", "explanation")]
+    return ["memory"] + list(dict.fromkeys(raw_plan)) + ["explanation"]
+
+
+def planner_agent(state: AgentState) -> Dict[str, Any]:
+    """Route the query to an agent pipeline, preferring semantic intent matching.
+
+    Embedding the query here serves two purposes: it routes the request, and the
+    vector is carried on the state for every downstream agent that retrieves, so
+    a request costs exactly one embedding call however many agents need one.
+    """
+    query = state.user_query.lower()
+
+    # The dashboard issues "telemetry status" as a literal system query rather
+    # than farmer prose, so exact matching is both correct and cheaper here.
+    if any(k in query for k in ("telemetry status", "overview", "टेलीमेट्री", "अवलोकन")):
+        plan = _finalize_plan(["weather", "soil", "market", "government", "agriculture"])
+        return {
+            "execution_plan": plan,
+            "current_agent": "planner",
+            "routing_mode": "telemetry",
+            "explanation": "",
+            "messages": state.messages + [
+                {"role": "assistant", "content": f"[Planner] Scheduled action plan: {plan}"}
+            ],
+        }
+
+    query_vector = embed_query(state.user_query)
+    semantic_plan = route_intent(query_vector)
+
+    if semantic_plan:
+        plan = _finalize_plan(semantic_plan)
+        routing_mode = "semantic"
+    else:
+        plan = _finalize_plan(_keyword_plan(query))
+        routing_mode = "keyword"
 
     return {
         "execution_plan": plan,
         "current_agent": "planner",
+        "query_vector": query_vector,
+        "routing_mode": routing_mode,
         "explanation": "",
-        "messages": state.messages + [{"role": "assistant", "content": f"[Planner] Scheduled action plan: {plan}"}]
+        "messages": state.messages + [
+            {
+                "role": "assistant",
+                "content": f"[Planner] Scheduled action plan ({routing_mode}): {plan}",
+            }
+        ],
     }
 
 # 2. Agriculture Agent
@@ -509,83 +552,119 @@ def government_agent(state: AgentState) -> Dict[str, Any]:
         "messages": state.messages + [{"role": "assistant", "content": f"[Government Scheme] Matched {len(matched)} programs."}]
     }
 
+# Resolves a guide by semantic retrieval, falling back to keyword matching.
+# Retrieval only *selects* which guide applies; the structured seed dict still
+# supplies the step arrays the frontend renders, so the response shape is
+# unchanged.
+def _select_guide(state: AgentState, guides: Dict[str, Any], category: str,
+                  keyword_rules: List[tuple], default_key: str) -> tuple:
+    documents = retrieve(
+        state.user_query,
+        limit=1,
+        category=category,
+        query_vector=state.query_vector,
+    )
+    for document in documents:
+        if document.guide_key in guides:
+            return document.guide_key, "semantic"
+
+    query = state.user_query.lower()
+    for keywords, key in keyword_rules:
+        if any(keyword in query for keyword in keywords):
+            return key, "keyword"
+    return default_key, "default"
+
+
 # 8. Healthcare Agent
 def healthcare_agent(state: AgentState) -> Dict[str, Any]:
-    query = state.user_query.lower()
-    
-    advice = HEALTHCARE_GUIDES["heat_stroke"] # default advice
-    key = "heat_stroke"
-    
-    if "snake" in query or "bite" in query:
-        advice = HEALTHCARE_GUIDES["snake_bite"]
-        key = "snake_bite"
-    elif "poison" in query or "pesticide" in query or "spray" in query:
-        advice = HEALTHCARE_GUIDES["pesticide_poisoning"]
-        key = "pesticide_poisoning"
-        
+    key, selection_mode = _select_guide(
+        state,
+        HEALTHCARE_GUIDES,
+        CATEGORY_HEALTH,
+        keyword_rules=[
+            (("snake", "bite"), "snake_bite"),
+            (("poison", "pesticide", "spray"), "pesticide_poisoning"),
+        ],
+        default_key="heat_stroke",
+    )
+    advice = HEALTHCARE_GUIDES[key]
+
     medical_advice = {
         "condition": key.replace("_", " ").title(),
         "first_aid": advice["steps"],
         "emergency_contact": "108 (National Ambulance Helpline)",
         "nearest_hospitals": ["Sub-Divisional Hospital (5km)", "District General Hospital (18km)"]
     }
-    
+
     steps_str = "\n- ".join(advice["steps"])
     explanation = f"Emergency Protocol for **{medical_advice['condition']}**:\n- {steps_str}\n\nCall emergency helpline **108** immediately."
-    
+
     return {
         "medical_advice": medical_advice,
         "explanation": state.explanation + f"\n\n[Healthcare Support]\n{explanation}",
-        "messages": state.messages + [{"role": "assistant", "content": f"[Healthcare] First aid loaded for {medical_advice['condition']}."}]
+        "messages": state.messages + [{"role": "assistant", "content": f"[Healthcare] First aid loaded for {medical_advice['condition']} ({selection_mode} match)."}]
     }
 
 # 9. Disaster Agent
 def disaster_agent(state: AgentState) -> Dict[str, Any]:
-    query = state.user_query.lower()
-    
-    disaster_type = "lightning"
-    guide = DISASTER_GUIDES["lightning"]
-    
-    if "flood" in query or "submerge" in query or "water" in query:
-        disaster_type = "flood"
-        guide = DISASTER_GUIDES["flood"]
-        
+    disaster_type, selection_mode = _select_guide(
+        state,
+        DISASTER_GUIDES,
+        CATEGORY_DISASTER,
+        keyword_rules=[(("flood", "submerge", "water"), "flood")],
+        default_key="lightning",
+    )
+    guide = DISASTER_GUIDES[disaster_type]
+
     # Crop damage calculator
     damage_est = "N/A"
     if disaster_type == "flood":
         # Estimate damage based on water logging duration
         damage_est = "Crops submerged for over 48 hours suffer roughly 60-80% yield loss. Fungal root rots may set in."
-        
+
     disaster_alerts = {
         "alert_type": disaster_type.upper(),
         "steps": guide["steps"],
         "damage_estimator": damage_est,
         "active_warnings": ["Yellow Warning: Light-to-moderate lightning storms forecasted over the sub-district." if disaster_type == "lightning" else "High Alert: River levels expected to cross danger mark."]
     }
-    
+
     steps_str = "\n- ".join(guide["steps"])
     explanation = f"**{disaster_type.upper()} ALERT**\nActive Warnings: {', '.join(disaster_alerts['active_warnings'])}\nAction steps:\n- {steps_str}"
     if damage_est != "N/A":
         explanation += f"\nCrop Damage Estimate: {damage_est}"
-        
+
     return {
         "disaster_alerts": disaster_alerts,
         "explanation": state.explanation + f"\n\n[Disaster Response]\n{explanation}",
-        "messages": state.messages + [{"role": "assistant", "content": f"[Disaster] Alert triggered for {disaster_type}."}]
+        "messages": state.messages + [{"role": "assistant", "content": f"[Disaster] Alert triggered for {disaster_type} ({selection_mode} match)."}]
     }
 
 # 10. Education Agent
 def education_agent(state: AgentState) -> Dict[str, Any]:
-    matched_tuts = []
-    query = state.user_query.lower()
-    
-    for tut in EDUCATION_TUTORIALS:
-        if tut["crop"].lower() in query or "irrigation" in query:
-            matched_tuts.append(tut)
-            
+    # Semantic retrieval over tutorial text, which catches topic matches the
+    # old `tut["crop"] in query or "irrigation" in query` check could not.
+    documents = retrieve(
+        state.user_query,
+        limit=3,
+        category=CATEGORY_EDUCATION,
+        query_vector=state.query_vector,
+    )
+    matched_ids = [document.guide_key for document in documents]
+    matched_tuts = [t for t in EDUCATION_TUTORIALS if t["id"] in matched_ids]
+    selection_mode = "semantic" if matched_tuts else "keyword"
+
+    if not matched_tuts:
+        query = state.user_query.lower()
+        matched_tuts = [
+            t for t in EDUCATION_TUTORIALS
+            if t["crop"].lower() in query or "irrigation" in query
+        ]
+
     if not matched_tuts:
         matched_tuts = [EDUCATION_TUTORIALS[0]]
-        
+        selection_mode = "default"
+
     tutorials_list = []
     for t in matched_tuts:
         quiz_ref = [q for q in QUIZZES if q["id"] == t["quiz_id"]]
@@ -597,14 +676,14 @@ def education_agent(state: AgentState) -> Dict[str, Any]:
             "quiz_title": quiz_title,
             "quiz_id": t["quiz_id"]
         })
-        
+
     exp_arr = [f"📚 **{t['title']}** ({t['duration']}): {t['summary']} (Quiz available: *{t['quiz_title']}*)" for t in tutorials_list]
     explanation = "\n".join(exp_arr)
-    
+
     return {
         "tutorials": tutorials_list,
         "explanation": state.explanation + f"\n\n[Education Hub]\n{explanation}",
-        "messages": state.messages + [{"role": "assistant", "content": f"[Education] Loaded tutorial links: {[t['title'] for t in tutorials_list]}."}]
+        "messages": state.messages + [{"role": "assistant", "content": f"[Education] Loaded {len(tutorials_list)} tutorial(s) via {selection_mode} match."}]
     }
 
 # 11. Memory Agent
@@ -653,43 +732,6 @@ def memory_agent(state: AgentState) -> Dict[str, Any]:
         "explanation": state.explanation + f"\n\n[Memory Context Retrieval]\n{exp}",
         "messages": state.messages + [{"role": "assistant", "content": "[Memory] Retrieved profile and preference constraints."}]
     }
-
-# 12. Knowledge Agent (RAG)
-def knowledge_agent(state: AgentState) -> Dict[str, Any]:
-    query = state.user_query.lower()
-    profile = state.farmer_profile or {}
-    allowed_profile_fields = {
-    "farmer_name",
-    "location",
-    "current_crop",
-    "land_size_hectares",
-    "soil_type",
-    "ph",
-    "irrigation_type",
-    "budget"}
-
-    safe_profile = {key: value for key, value in profile.items() if key in allowed_profile_fields}
-    # Check if backend LLM is available to get real-time AI knowledge
-    gemini_resp = call_chatbot_api(prompt=f"Provide a short, structured agricultural recommendation for: '{query}' regarding crop {safe_profile.get('current_crop', 'Rice')} at location {safe_profile.get('location', 'Noida')}.", language=state.language, farmer_profile=safe_profile)
-    
-    if gemini_resp:
-        explanation = f"KVK RAG Insights:\n- {gemini_resp}"
-        doc_count = 1
-    else:
-        results = []
-        for kb in KNOWLEDGE_BASE:
-            words = kb["query"].split()
-            if any(w in query for w in words):
-                results.append(kb["content"])
-        if not results:
-            results.append("KVK Advisory: Standard farming procedures suggest maintaining clean drainage, periodic weeding, and using seed varieties certified by regional agricultural universities.")
-        explanation = "\n".join([f"- {r}" for r in results])
-        doc_count = len(results)
-    return {
-        "explanation": state.explanation + f"\n\n[Knowledge Retrieval (RAG via Qdrant)]\n{explanation}",
-        "messages": state.messages + [{"role": "assistant", "content": f"[Knowledge Agent] Fetched {doc_count} RAG reference documents."}]
-    }
-
 
 # 13. Explanation Agent (Aggregator + LLM-powered final response)
 def explanation_agent(state: AgentState) -> Dict[str, Any]:
@@ -789,6 +831,12 @@ def explanation_agent(state: AgentState) -> Dict[str, Any]:
             for t in state.tutorials
         ]
         context_parts.append("Education Tutorials:\n" + "\n".join(tut_lines))
+    if state.retrieved_docs:
+        reference_lines = [
+            f"[{index}] {doc.get('title')} ({doc.get('source')}): {doc.get('text')}"
+            for index, doc in enumerate(state.retrieved_docs, start=1)
+        ]
+        context_parts.append("Reference Documents:\n" + "\n".join(reference_lines))
 
     context_block = "\n".join(context_parts)
 
@@ -821,7 +869,12 @@ def explanation_agent(state: AgentState) -> Dict[str, Any]:
     "1. Respond entirely in the user's preferred language.\n"
     "2. If a warning is present in the supplied context, mention it immediately "
     "after the summary.\n"
-    "3. Use ONLY facts and recommendations present in the supplied context.\n"
+    "3. Use ONLY facts and recommendations present in the supplied context. "
+    "The 'Reference Documents' block is retrieved source material and "
+    "outranks your own prior knowledge; prefer it wherever they disagree. "
+    "Cite reference documents with [1], [2], etc. when using them. "
+    "If references do not cover a detail, say field confirmation is needed "
+    "instead of inventing a specific treatment.\n"
     "4. Do NOT invent fertilizer quantities, pesticide doses, prices, dates, "
     "weather conditions, or other information.\n"
     "5. Do NOT provide reasoning or explain how you reached the recommendations.\n")
