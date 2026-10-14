@@ -191,6 +191,7 @@ export default function VisionAnalysis({ onAnalyzeComplete, activeLanguage }: Vi
 
     const formData = new FormData();
     formData.append("file", file);
+    formData.append("language", activeLanguage);
 
     try {
       const apiBaseUrl = process.env.NEXT_PUBLIC_BACKEND_API_URL || "http://localhost:8000";

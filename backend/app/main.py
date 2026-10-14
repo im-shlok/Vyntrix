@@ -234,6 +234,73 @@ client = OpenAI(
     api_key=os.getenv("NVIDIA_API_KEY", "")
 )
 
+VISION_LANGUAGE_NAMES = {
+    "en": "English",
+    "hi": "Hindi",
+    "pa": "Punjabi",
+    "mr": "Marathi",
+    "te": "Telugu",
+    "ta": "Tamil",
+    "kn": "Kannada",
+    "gu": "Gujarati",
+    "bn": "Bengali",
+    "ml": "Malayalam",
+    "or": "Odia",
+}
+
+def get_vision_advice(labels: list[str], language: str) -> tuple[dict[str, dict[str, str]], Optional[str]]:
+    """Generate cautious, crop-specific severity and treatment guidance for detections."""
+    language_name = VISION_LANGUAGE_NAMES.get(language, "English")
+    prompt = f"""
+You are Agriva, an agricultural plant-health advisor.
+The computer vision model detected these labels in a crop image:
+{json.dumps(labels, ensure_ascii=False)}
+
+For every label, return practical guidance in {language_name}. A label may be a
+crop or plant class rather than a confirmed disease. Do not invent a disease:
+when uncertain, use a conservative severity and say that field confirmation is
+needed. Recommend only applicable actions, prioritizing sanitation, monitoring,
+watering, isolation, or consultation. Mention a pesticide or fungicide only if
+it is appropriate, and include the active ingredient or product type plus a
+reminder to follow the local label and agricultural officer guidance.
+
+Return ONLY valid JSON in this shape:
+{{
+  "label": {{
+    "severity": "Low|Moderate|High|Critical|Uncertain",
+    "treatment": "short actionable treatment in the requested language"
+  }}
+}}
+"""
+    try:
+        completion = client.chat.completions.create(
+            model="google/gemma-4-31b-it",
+            messages=[
+                {"role": "system", "content": "Return valid JSON only. Never use markdown fences."},
+                {"role": "user", "content": prompt},
+            ],
+            temperature=0.1,
+            top_p=0.8,
+            max_tokens=700,
+            stream=False,
+        )
+        content = completion.choices[0].message.content
+        if not content:
+            raise ValueError("Vision advice model returned an empty response.")
+        advice = json.loads(content.strip().removeprefix("```json").removesuffix("```").strip())
+        if not isinstance(advice, dict):
+            raise ValueError("Vision advice model returned an invalid JSON object.")
+        return {
+            label: {
+                "severity": str(value.get("severity", "Uncertain")),
+                "treatment": str(value.get("treatment", "Confirm the issue with a local agricultural expert.")),
+            }
+            for label, value in advice.items()
+            if isinstance(value, dict)
+        }, None
+    except Exception as exc:
+        return {}, str(exc)
+
 LANGUAGE_NAMES = {
     "en": "English",
     "hi": "Hindi (Devanagari)",
@@ -461,7 +528,10 @@ def chat_endpoint(request: ChatRequest):
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/api/vision/analyze")
-async def analyze_crop_image(file: UploadFile = File(...)):
+async def analyze_crop_image(
+    file: UploadFile = File(...),
+    language: str = Form("en"),
+):
     """Run the startup-loaded YOLO leaf detector and return an annotated image."""
     if vision_model is None:
         raise HTTPException(status_code=503, detail="Vision model is unavailable.")
@@ -480,6 +550,7 @@ async def analyze_crop_image(file: UploadFile = File(...)):
         results = vision_model.predict(source=image, device=VISION_DEVICE, verbose=False)
         result = results[0]
         detections = []
+        raw_detections = []
         if result.boxes is not None:
             names = result.names
             for box in result.boxes:
@@ -487,7 +558,7 @@ async def analyze_crop_image(file: UploadFile = File(...)):
                 confidence = float(box.conf[0].cpu().item())
                 class_id = int(box.cls[0].cpu().item())
                 label = names.get(class_id, str(class_id)) if isinstance(names, dict) else str(class_id)
-                detections.append({
+                raw_detections.append({
                     "label": label,
                     "confidence": confidence,
                     "bbox": [
@@ -497,9 +568,22 @@ async def analyze_crop_image(file: UploadFile = File(...)):
                         ((y2 - y1) / height) * 100,
                     ],
                     "bbox_pixels": [x1, y1, x2, y2],
-                    "severity": "Moderate",
-                    "remedy": "Review the affected area and follow local agricultural guidance.",
                 })
+
+        detected_labels = sorted({detection["label"] for detection in raw_detections})
+        advice_by_label, advice_error = (
+            get_vision_advice(detected_labels, language)
+            if detected_labels
+            else ({}, None)
+        )
+        for detection in raw_detections:
+            advice = advice_by_label.get(detection["label"], {})
+            detection["severity"] = advice.get("severity", "Uncertain")
+            detection["remedy"] = advice.get(
+                "treatment",
+                "No AI treatment guidance was available; confirm the diagnosis with a local agricultural expert.",
+            )
+            detections.append(detection)
 
         annotated_image = result.plot()
         output_name = f"vision_{uuid.uuid4().hex}.jpg"
@@ -512,6 +596,9 @@ async def analyze_crop_image(file: UploadFile = File(...)):
             "detections": detections,
             "device": str(VISION_DEVICE),
             "model": os.path.basename(MODEL_PATH),
+            "advice_language": language,
+            "advice_source": "llm" if not advice_error else "fallback",
+            "advice_error": advice_error,
         }
     except HTTPException:
         raise
