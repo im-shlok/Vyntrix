@@ -249,7 +249,7 @@ VISION_LANGUAGE_NAMES = {
 }
 
 def get_vision_advice(labels: list[str], language: str) -> tuple[dict[str, dict[str, str]], Optional[str]]:
-    """Generate cautious, crop-specific severity and treatment guidance for detections."""
+    """Generate cautious, crop-specific treatment guidance for detections."""
     language_name = VISION_LANGUAGE_NAMES.get(language, "English")
     prompt = f"""
 You are Agriva, an agricultural plant-health advisor.
@@ -258,8 +258,8 @@ The computer vision model detected these labels in a crop image:
 
 For every label, return practical guidance in {language_name}. A label may be a
 crop or plant class rather than a confirmed disease. Do not invent a disease:
-when uncertain, use a conservative severity and say that field confirmation is
-needed. Recommend only applicable actions, prioritizing sanitation, monitoring,
+when uncertain, say that field confirmation is needed. Recommend only applicable
+actions, prioritizing sanitation, monitoring,
 watering, isolation, or consultation. Mention a pesticide or fungicide only if
 it is appropriate, and include the active ingredient or product type plus a
 reminder to follow the local label and agricultural officer guidance.
@@ -267,7 +267,6 @@ reminder to follow the local label and agricultural officer guidance.
 Return ONLY valid JSON in this shape:
 {{
   "label": {{
-    "severity": "Low|Moderate|High|Critical|Uncertain",
     "treatment": "short actionable treatment in the requested language"
   }}
 }}
@@ -292,7 +291,6 @@ Return ONLY valid JSON in this shape:
             raise ValueError("Vision advice model returned an invalid JSON object.")
         return {
             label: {
-                "severity": str(value.get("severity", "Uncertain")),
                 "treatment": str(value.get("treatment", "Confirm the issue with a local agricultural expert.")),
             }
             for label, value in advice.items()
@@ -300,6 +298,16 @@ Return ONLY valid JSON in this shape:
         }, None
     except Exception as exc:
         return {}, str(exc)
+
+def calculate_vision_severity(confidence: float) -> str:
+    """Map the detector confidence score to the severity shown in the UI."""
+    if confidence >= 0.80:
+        return "Critical"
+    if confidence >= 0.60:
+        return "High"
+    if confidence >= 0.40:
+        return "Moderate"
+    return "Low"
 
 LANGUAGE_NAMES = {
     "en": "English",
@@ -578,7 +586,7 @@ async def analyze_crop_image(
         )
         for detection in raw_detections:
             advice = advice_by_label.get(detection["label"], {})
-            detection["severity"] = advice.get("severity", "Uncertain")
+            detection["severity"] = calculate_vision_severity(detection["confidence"])
             detection["remedy"] = advice.get(
                 "treatment",
                 "No AI treatment guidance was available; confirm the diagnosis with a local agricultural expert.",
