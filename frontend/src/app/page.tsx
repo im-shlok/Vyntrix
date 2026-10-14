@@ -130,7 +130,7 @@ export default function LandingPage() {
       meshSubtitle: "Multi-Agent Coordination Mesh",
       meshDesc: "Agriva deploys a compiled state graph of LangGraph agents to compute action advisories dynamically based on soil metrics and sensor logs. Hover over any outer agent node on the constellation circle to inspect tools and roles.",
       bpTitle: "Interactive Schematic Blueprint",
-      bpTag: "KISAANMITRA SYSTEM ARCHITECTURE",
+      bpTag: "AGRIVA SYSTEM ARCHITECTURE",
       bpClose: "Acknowledge Blueprint",
       stage1Title: "Unstructured Inputs",
       stage1Desc: "Ingests raw farmer inputs: regional voice notes, YOLO leaf disease scans, and IoT moisture indices.",
@@ -1255,7 +1255,7 @@ export default function LandingPage() {
           </div>
 
           <div className="text-center text-[9px] text-zinc-650 font-bold py-6 border-t border-white/5 mt-8 font-mono select-none">
-            © 2026 KISAANMITRA. ALL RIGHTS RESERVED.
+            © 2026 AGRIVA. ALL RIGHTS RESERVED.
           </div>
         </section>
 

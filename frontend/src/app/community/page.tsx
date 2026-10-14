@@ -575,7 +575,7 @@ export default function CommunityPage() {
         </span>
       </div>
       <div className="flex items-center gap-3">
-        <span>© 2026 KISAANMITRA // LIVE_COMMUNITY_CONSOLE</span>
+        <span>© 2026 AGRIVA // LIVE_COMMUNITY_CONSOLE</span>
       </div>
     </footer>
 

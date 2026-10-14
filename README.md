@@ -136,7 +136,7 @@ REDIS_URL=redis://localhost:6379
 QDRANT_URL=http://localhost:6333
 
 # Database
-DATABASE_URL=sqlite:///./kisaanmitra.db
+DATABASE_URL=sqlite:///./agriva.db
 ```
 
 > ⚠️ Update these values/keys to match your actual `backend/app/core` configuration if the variable names differ.
