@@ -272,8 +272,7 @@ def planner_agent(state: AgentState) -> Dict[str, Any]:
     """
     query = state.user_query.lower()
 
-    # The dashboard issues "telemetry status" as a literal system query rather
-    # than farmer prose, so exact matching is both correct and cheaper here.
+    # telemetry status update
     if any(k in query for k in ("telemetry status", "overview", "टेलीमेट्री", "अवलोकन")):
         plan = _finalize_plan(["weather", "soil", "market", "government", "agriculture"])
         return {
