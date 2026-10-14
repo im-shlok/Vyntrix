@@ -36,6 +36,38 @@ class FarmerProfile(Base):
     budget = Column(String(50), default="Medium")
     language = Column(String(10), default="en")
 
+class LocationCache(Base):
+    __tablename__ = "location_cache"
+
+    id = Column(Integer, primary_key=True, index=True)
+    address_key = Column(String(64), unique=True, index=True, nullable=False)
+    address_text = Column(String(500), nullable=False)
+    latitude = Column(Float, nullable=False)
+    longitude = Column(Float, nullable=False)
+    resolved_at = Column(DateTime, default=datetime.datetime.utcnow, nullable=False)
+
+class AgentOutputCache(Base):
+    __tablename__ = "agent_output_cache"
+
+    id = Column(Integer, primary_key=True, index=True)
+    cache_key = Column(String(64), unique=True, index=True, nullable=False)
+    payload = Column(Text, nullable=False)
+    created_at = Column(DateTime, default=datetime.datetime.utcnow, nullable=False)
+
+class TelemetrySnapshot(Base):
+    __tablename__ = "telemetry_snapshot"
+
+    id = Column(Integer, primary_key=True, index=True)
+    temperature = Column(Float, nullable=False, default=31.5)
+    humidity = Column(Float, nullable=False, default=72.0)
+    soil_moisture = Column(Float, nullable=False, default=48.0)
+    soil_ph = Column(Float, nullable=False, default=6.7)
+    nitrogen = Column(Float, nullable=False, default=178.0)
+    phosphorus = Column(Float, nullable=False, default=41.0)
+    potassium = Column(Float, nullable=False, default=215.0)
+    water_level_pct = Column(Float, nullable=False, default=65.0)
+    updated_at = Column(DateTime, default=datetime.datetime.utcnow, nullable=False)
+
 # Conversation chat log model
 class ChatMessage(Base):
     __tablename__ = "chat_messages"

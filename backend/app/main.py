@@ -1,8 +1,10 @@
 import os
 import shutil
 import json
+import hashlib
+import datetime
 from urllib.error import HTTPError, URLError
-from urllib.parse import urlencode
+from urllib.parse import urlencode, quote
 from urllib.request import Request, urlopen
 from gtts import gTTS
 from dotenv import load_dotenv
@@ -13,9 +15,16 @@ from fastapi import FastAPI, UploadFile, File, Form, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
+import re
 from typing import Dict, Any, Optional
 
-from app.core.database import init_db
+from app.core.database import (
+    init_db,
+    SessionLocal,
+    LocationCache,
+    AgentOutputCache,
+    TelemetrySnapshot
+)
 from app.core.redis_client import redis_client
 from app.agents.knowledge import seed_qdrant_knowledge
 from app.agents.graph import compiled_graph
@@ -55,20 +64,44 @@ def on_startup():
     print("[Startup] Initializing Qdrant vector semantic collections...")
     seed_qdrant_knowledge()
     
-    # Initialize Redis telemetry cache defaults if empty
+    # Restore the persisted telemetry snapshot into the fast Redis cache.
     cached_iot = redis_client.hgetall("telemetry")
     if not cached_iot:
-        redis_client.hset("telemetry", mapping={
-            "temperature": "31.5",
-            "humidity": "72.0",
-            "soil_moisture": "48.0",
-            "soil_ph": "6.7",
-            "nitrogen": "178",
-            "phosphorus": "41",
-            "potassium": "215",
-            "water_level_pct": "65"
-        })
-        print("[Startup] Seeded Redis cache with default telemetry values.")
+        db = SessionLocal()
+        try:
+            snapshot = db.query(TelemetrySnapshot).order_by(
+                TelemetrySnapshot.updated_at.desc()
+            ).first()
+            if snapshot:
+                telemetry_values = {
+                    "temperature": snapshot.temperature,
+                    "humidity": snapshot.humidity,
+                    "soil_moisture": snapshot.soil_moisture,
+                    "soil_ph": snapshot.soil_ph,
+                    "nitrogen": snapshot.nitrogen,
+                    "phosphorus": snapshot.phosphorus,
+                    "potassium": snapshot.potassium,
+                    "water_level_pct": snapshot.water_level_pct
+                }
+                redis_client.hset("telemetry", mapping=telemetry_values)
+                print("[Startup] Restored telemetry from SQL snapshot.")
+            else:
+                telemetry_values = {
+                    "temperature": 31.5,
+                    "humidity": 72.0,
+                    "soil_moisture": 48.0,
+                    "soil_ph": 6.7,
+                    "nitrogen": 178.0,
+                    "phosphorus": 41.0,
+                    "potassium": 215.0,
+                    "water_level_pct": 65.0
+                }
+                db.add(TelemetrySnapshot(**telemetry_values))
+                db.commit()
+                redis_client.hset("telemetry", mapping=telemetry_values)
+                print("[Startup] Seeded SQL and Redis telemetry defaults.")
+        finally:
+            db.close()
 
 class ChatRequest(BaseModel):
     query: str
@@ -77,9 +110,95 @@ class ChatRequest(BaseModel):
     need_audio: bool = False
     profile: Optional[Dict[str, Any]] = None
 
+class TelemetryUpdate(BaseModel):
+    temperature: Optional[float] = None
+    humidity: Optional[float] = None
+    soil_moisture: Optional[float] = None
+    soil_ph: Optional[float] = None
+    nitrogen: Optional[float] = None
+    phosphorus: Optional[float] = None
+    potassium: Optional[float] = None
+    water_level_pct: Optional[float] = None
+
+class LocationResolveRequest(BaseModel):
+    address: str
+    fallback_lat: Optional[float] = None
+    fallback_lng: Optional[float] = None
+
 @app.get("/api/health")
 def health_check():
     return {"status": "healthy", "service": "Agriva Engine", "databases": "connected"}
+
+@app.post("/api/location/resolve")
+def resolve_location(request: LocationResolveRequest):
+    """Resolve a farm address using a 15-minute SQL-backed geocoding cache."""
+    address = " ".join(request.address.split())
+    if not address:
+        raise HTTPException(status_code=422, detail="Farm address is required")
+
+    address_key = hashlib.sha256(address.casefold().encode("utf-8")).hexdigest()
+    now = datetime.datetime.utcnow()
+    db = SessionLocal()
+    try:
+        cached = db.query(LocationCache).filter(LocationCache.address_key == address_key).first()
+        if cached and (now - cached.resolved_at).total_seconds() < 900:
+            return {
+                "latitude": cached.latitude,
+                "longitude": cached.longitude,
+                "source": "database_cache",
+                "cached": True
+            }
+
+        url = f"https://nominatim.openstreetmap.org/search?format=jsonv2&limit=1&q={quote(address)}"
+        request_obj = Request(
+            url,
+            headers={
+                "Accept": "application/json",
+                "User-Agent": "Agriva/1.0 farm-location-resolver"
+            }
+        )
+        try:
+            with urlopen(request_obj, timeout=8) as response:
+                results = json.loads(response.read().decode("utf-8"))
+            result = results[0] if results else None
+            latitude = float(result["lat"]) if result else None
+            longitude = float(result["lon"]) if result else None
+        except (OSError, ValueError, KeyError, json.JSONDecodeError):
+            latitude = None
+            longitude = None
+
+        if latitude is not None and longitude is not None:
+            if cached:
+                cached.address_text = address
+                cached.latitude = latitude
+                cached.longitude = longitude
+                cached.resolved_at = now
+            else:
+                db.add(LocationCache(
+                    address_key=address_key,
+                    address_text=address,
+                    latitude=latitude,
+                    longitude=longitude,
+                    resolved_at=now
+                ))
+            db.commit()
+            return {
+                "latitude": latitude,
+                "longitude": longitude,
+                "source": "address_geocode",
+                "cached": False
+            }
+
+        if request.fallback_lat is not None and request.fallback_lng is not None:
+            return {
+                "latitude": request.fallback_lat,
+                "longitude": request.fallback_lng,
+                "source": "saved_coordinates",
+                "cached": False
+            }
+        raise HTTPException(status_code=502, detail="Could not resolve farm address")
+    finally:
+        db.close()
 
 client = OpenAI(
     base_url="https://integrate.api.nvidia.com/v1",
@@ -139,7 +258,7 @@ jokes, recipes, or other unrelated content.
 
     system_prompt = request.system_prompt if request.system_prompt else default_system_prompt
     completion = client.chat.completions.create(
-        model="openai/gpt-oss-20b",
+        model="google/gemma-4-31b-it",
         messages=[
             {
             "role": "system",
@@ -169,23 +288,65 @@ def chat_endpoint(request: ChatRequest):
     profile = request.profile or {}
     allowed_profile_fields = {
         "farmer_name",
+        "contact_number",
         "location",
+        "address",
         "current_crop",
         "land_size_hectares",
         "soil_type",
         "ph",
         "irrigation_type",
-        "budget"}
-    
-    safe_profile = {key: value for key, value in profile.items() if key in allowed_profile_fields}
-    
-    
+        "budget",
+        "lat",
+        "lng",
+        "temperature",
+        "humidity",
+        "soil_moisture",
+        "nitrogen",
+        "phosphorus",
+        "potassium",
+        "water_level_pct"
+    }
+
     # Load latest telemetry from Redis cache
     cached = redis_client.hgetall("telemetry")
     if cached:
-        profile["ph"] = float(cached.get("soil_ph", 6.7))
-        profile["soil_moisture"] = float(cached.get("soil_moisture", 48.0))
-        
+        profile.update({
+            "ph": float(cached.get("soil_ph", 6.7)),
+            "soil_moisture": float(cached.get("soil_moisture", 48.0)),
+            "temperature": float(cached.get("temperature", 31.5)),
+            "humidity": float(cached.get("humidity", 72.0)),
+            "nitrogen": float(cached.get("nitrogen", 178)),
+            "phosphorus": float(cached.get("phosphorus", 41)),
+            "potassium": float(cached.get("potassium", 215)),
+            "water_level_pct": float(cached.get("water_level_pct", 65))
+        })
+
+    safe_profile = {key: value for key, value in profile.items() if key in allowed_profile_fields}
+
+    is_telemetry_query = "telemetry status" in request.query.lower()
+    cache_key = hashlib.sha256(json.dumps({
+        "query": request.query.strip().casefold(),
+        "language": request.language,
+        "profile": safe_profile
+    }, sort_keys=True, default=str).encode("utf-8")).hexdigest()
+    cache_db = SessionLocal()
+    if is_telemetry_query and not request.need_audio:
+        try:
+            cached_output = cache_db.query(AgentOutputCache).filter(
+                AgentOutputCache.cache_key == cache_key
+            ).first()
+            if cached_output and (
+                datetime.datetime.utcnow() - cached_output.created_at
+            ).total_seconds() < 900:
+                print(f"[Agent Cache] HIT telemetry output for {request.query}")
+                return json.loads(cached_output.payload)
+            print(f"[Agent Cache] MISS telemetry output for {request.query}")
+        finally:
+            cache_db.close()
+    else:
+        cache_db.close()
+
     initial_state = AgentState(
         user_query=request.query,
         language=request.language,
@@ -223,13 +384,14 @@ def chat_endpoint(request: ChatRequest):
             speech_filename = f"response_{request.language}.mp3"
             speech_output_path = os.path.join(VOICE_DIR, speech_filename)
             try:
-                tts = gTTS(text=explanation, lang=request.language if request.language in ["en", "hi", "ta", "te", "bn", "gu", "kn", "ml", "mr", "pa"] else "en")
+                voice_content = clean_text_for_tts(explanation)
+                tts = gTTS(text=voice_content, lang=request.language if request.language in ["en", "hi", "ta", "te", "bn", "gu", "kn", "ml", "mr", "pa"] else "en")
                 tts.save(speech_output_path)
                 speech_url = f"/static/voice/{speech_filename}"
             except Exception:
                 speech_url = None
 
-        return {
+        response_payload = {
             "execution_plan": plan,
             "vision_results": vision,
             "weather_info": weather,
@@ -243,6 +405,29 @@ def chat_endpoint(request: ChatRequest):
             "profile": profile,
             "speech_url": speech_url if request.need_audio else None
         }
+
+        if is_telemetry_query and not request.need_audio:
+            cache_db = SessionLocal()
+            try:
+                cached_output = cache_db.query(AgentOutputCache).filter(
+                    AgentOutputCache.cache_key == cache_key
+                ).first()
+                serialized_payload = json.dumps(response_payload, default=str)
+                if cached_output:
+                    cached_output.payload = serialized_payload
+                    cached_output.created_at = datetime.datetime.utcnow()
+                else:
+                    cache_db.add(AgentOutputCache(
+                        cache_key=cache_key,
+                        payload=serialized_payload,
+                        created_at=datetime.datetime.utcnow()
+                    ))
+                cache_db.commit()
+                print(f"[Agent Cache] STORED telemetry output for {request.query}")
+            finally:
+                cache_db.close()
+
+        return response_payload
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -385,6 +570,7 @@ async def process_voice(
     voice_content = explanation if explanation else "Advice processing completed."
 
     try:
+        voice_content = clean_text_for_tts(voice_content)
         tts = gTTS(text=voice_content, lang=language if language in ["en", "hi", "ta", "te", "bn", "gu", "kn", "ml", "mr", "pa"] else "en")
         tts.save(speech_output_path)
         speech_url = f"/static/voice/{speech_filename}"
@@ -410,18 +596,62 @@ def get_telemetry():
         "humidity": float(cached.get("humidity", 70)),
         "soil_moisture": float(cached.get("soil_moisture", 45)),
         "soil_ph": float(cached.get("soil_ph", 6.5)),
-        "nitrogen": int(cached.get("nitrogen", 150)),
-        "phosphorus": int(cached.get("phosphorus", 40)),
-        "potassium": int(cached.get("potassium", 200)),
-        "water_level_pct": int(cached.get("water_level_pct", 50))
+        "nitrogen": float(cached.get("nitrogen", 150)),
+        "phosphorus": float(cached.get("phosphorus", 40)),
+        "potassium": float(cached.get("potassium", 200)),
+        "water_level_pct": float(cached.get("water_level_pct", 50))
     }
 
 @app.post("/api/iot/telemetry")
-def update_telemetry(data: Dict[str, Any]):
+def update_telemetry(data: TelemetryUpdate):
     """Saves incoming IoT sensor updates in the Redis cache."""
     # Convert numeric values to strings for Redis hash storage compatibility
-    stringified_map = {str(k): str(v) for k, v in data.items()}
+    values = data.model_dump(exclude_none=True)
+    limits = {
+        "temperature": (-40, 70),
+        "humidity": (0, 100),
+        "soil_moisture": (0, 100),
+        "soil_ph": (0, 14),
+        "nitrogen": (0, 10000),
+        "phosphorus": (0, 10000),
+        "potassium": (0, 10000),
+        "water_level_pct": (0, 100)
+    }
+    for key, value in values.items():
+        minimum, maximum = limits[key]
+        if value < minimum or value > maximum:
+            raise HTTPException(
+                status_code=422,
+                detail=f"{key} must be between {minimum} and {maximum}"
+            )
+
+    stringified_map = {str(k): str(v) for k, v in values.items()}
     redis_client.hset("telemetry", mapping=stringified_map)
+
+    db = SessionLocal()
+    try:
+        snapshot = db.query(TelemetrySnapshot).order_by(
+            TelemetrySnapshot.updated_at.desc()
+        ).first()
+        if not snapshot:
+            snapshot = TelemetrySnapshot(
+                temperature=31.5,
+                humidity=72.0,
+                soil_moisture=48.0,
+                soil_ph=6.7,
+                nitrogen=178.0,
+                phosphorus=41.0,
+                potassium=215.0,
+                water_level_pct=65.0
+            )
+            db.add(snapshot)
+        for key, value in values.items():
+            setattr(snapshot, key, value)
+        snapshot.updated_at = datetime.datetime.utcnow()
+        db.commit()
+    finally:
+        db.close()
+
     return {"status": "success", "cached_telemetry": redis_client.hgetall("telemetry")}
 
 @app.get("/api/marketplace/prices")
@@ -431,7 +661,7 @@ def get_mandi_prices():
 @app.get("/api/mandi/records")
 def get_mandi_records():
     """Proxy current Agmarknet records without exposing the government API key."""
-    api_key = os.getenv("GOV_API_KEY")
+    api_key = (os.getenv("GOV_API_KEY") or "").strip()
     if not api_key:
         raise HTTPException(status_code=503, detail="GOV_API_KEY is not configured")
 
@@ -450,6 +680,13 @@ def get_mandi_records():
         with urlopen(request, timeout=20) as response:
             payload = json.load(response)
     except HTTPError as error:
+        if error.code == 403:
+            print("[Mandi] Agmarknet rejected GOV_API_KEY; frontend will use its explicit fallback path.")
+            return {
+                "records": [],
+                "source": "upstream_unavailable",
+                "error": "Agmarknet rejected GOV_API_KEY"
+            }
         raise HTTPException(status_code=502, detail=f"Agmarknet returned HTTP {error.code}") from error
     except (URLError, TimeoutError, json.JSONDecodeError) as error:
         raise HTTPException(status_code=502, detail="Unable to fetch Agmarknet records") from error
@@ -458,3 +695,24 @@ def get_mandi_records():
         raise HTTPException(status_code=502, detail="Agmarknet returned an invalid records payload")
 
     return payload
+
+
+def clean_text_for_tts(text: str) -> str:
+    # Remove Markdown bold and italic markers
+    text = re.sub(r"\*{1,3}(.*?)\*{1,3}", r"\1", text)
+
+    # Remove bullet markers at the start of lines
+    text = re.sub(r"(?m)^\s*[-*•▪]\s+", "", text)
+
+    # Remove Markdown heading markers
+    text = re.sub(r"(?m)^\s*#{1,6}\s+", "", text)
+
+    # Replace table separators and pipes
+    text = text.replace("|", " ")
+    text = re.sub(r"(?m)^\s*[-:]{3,}\s*$", "", text)
+
+    # Normalize whitespace
+    text = re.sub(r"[ \t]+", " ", text)
+    text = re.sub(r"\n{2,}", "\n", text)
+
+    return text.strip()

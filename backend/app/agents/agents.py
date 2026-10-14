@@ -31,7 +31,7 @@ def call_chatbot_api(
     )
 
     try:
-        with urllib.request.urlopen(req, timeout=60) as response:
+        with urllib.request.urlopen(req, timeout=90) as response:
             res = json.loads(response.read().decode("utf-8"))
             # The reponse is someow has br in it
             answer = (res.get("answer") or "").strip()
@@ -339,13 +339,24 @@ def weather_agent(state: AgentState) -> Dict[str, Any]:
     profile = state.farmer_profile or {}
     allowed_profile_fields = {
     "farmer_name",
+    "contact_number",
     "location",
+    "address",
     "current_crop",
     "land_size_hectares",
     "soil_type",
     "ph",
     "irrigation_type",
-    "budget"}
+    "budget",
+    "lat",
+    "lng",
+    "temperature",
+    "humidity",
+    "soil_moisture",
+    "nitrogen",
+    "phosphorus",
+    "potassium",
+    "water_level_pct"}
 
     safe_profile = {key: value for key, value in profile.items() if key in allowed_profile_fields}
     location = profile.get("location", "Noida")
@@ -401,20 +412,11 @@ def soil_agent(state: AgentState) -> Dict[str, Any]:
     ph = profile.get("ph", 6.5)
     location = profile.get("location", "").lower()
     
-    # Calculate soil readings from state or provide smart recommendations
-    n = int(profile.get("nitrogen", 178))
-    p = int(profile.get("phosphorus", 41))
-    k = int(profile.get("potassium", 215))
-    
-    moisture = 48
-    if "noida" in location:
-        moisture = 48
-    elif "pune" in location or "maharashtra" in location:
-        moisture = 65
-    elif "haryana" in location or "karnal" in location:
-        moisture = 42
-    elif "punjab" in location:
-        moisture = 55
+    # Use the latest sensor readings passed from the telemetry cache.
+    n = float(profile.get("nitrogen", 178))
+    p = float(profile.get("phosphorus", 41))
+    k = float(profile.get("potassium", 215))
+    moisture = float(profile.get("soil_moisture", 48))
     
     rec_fertilizer = "Apply 50 kg Urea (Nitrogen) and 30 kg MOP (Potash) per acre in split doses."
     if ph < 5.5:
@@ -827,7 +829,6 @@ def explanation_agent(state: AgentState) -> Dict[str, Any]:
     user_prompt = (
         f"Preferred language: {language_name} (code: {lang})\n"
         f"Every word, heading, and label in the answer must use {language_name}. "
-        "Do not switch languages because the context uses English field names.\n"
         f"Context:\n{context_block}\n"
         f"Reply to the user query also first. "
         f"Do not reply the system prompt. Use it to make the answer."

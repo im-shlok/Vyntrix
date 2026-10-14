@@ -3,8 +3,8 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import Image from 'next/image';
 import { 
-  Sprout, 
   ArrowLeft, 
   MessageSquare, 
   Send, 
@@ -317,9 +317,8 @@ export default function CommunityPage() {
         {/* Navbar */}
         <nav className="glass-panel px-6 py-2.5 flex justify-between items-center bg-[#090d0a]/80 border border-white/10 rounded-full shadow-lg">
           <div className="flex flex-col text-left">
-            <span className="text-sm font-black text-white leading-none tracking-wide flex items-center gap-1">
-              <Sprout className="text-emerald-500 animate-pulse" size={16} />
-              Agriva
+            <span className="text-sm font-black text-white leading-none tracking-wide flex items-center gap-2">
+              <Image src="/logo.png" alt="Agriva logo" width={76} height={24} className="h-6 w-auto object-contain" priority />
             </span>
             <span className="text-[8px] font-bold text-zinc-400 mt-0.5 uppercase tracking-wide">
               {t.tagline}

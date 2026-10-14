@@ -9,6 +9,7 @@ interface FarmMapProps {
   activeLanguage: string;
   farmerLat?: number;
   farmerLng?: number;
+  farmerAddress?: string;
 }
 
 const getCoordinatesForAddress = (addrText: string) => {
@@ -41,7 +42,7 @@ const getCoordinatesForAddress = (addrText: string) => {
   return { lat: 30.2115, lng: 74.9525 };
 };
 
-export default function FarmMap({ weather, soil, activeLanguage, farmerLat, farmerLng }: FarmMapProps) {
+export default function FarmMap({ weather, soil, activeLanguage, farmerLat, farmerLng, farmerAddress }: FarmMapProps) {
   // Center coordinates state: Default to Bhatinda, Punjab or registered coordinates
   const [coords, setCoords] = useState({ lat: farmerLat || 30.2115, lng: farmerLng || 74.9525 });
   const [locationStatus, setLocationStatus] = useState<string>("SYNCING_GPS");
@@ -64,6 +65,8 @@ export default function FarmMap({ weather, soil, activeLanguage, farmerLat, farm
       temp: "Temp",
       ph: "pH",
       gpsFetching: "FETCHING_GPS_PERMISSION",
+      addressFetching: "RESOLVING_FARM_ADDRESS",
+      addressOk: "ADDRESS_SYNC_OK",
       gpsOk: "GPS_SYNC_OK",
       gpsFailed: "DEFAULT_GPS_ Punjab"
     },
@@ -78,6 +81,8 @@ export default function FarmMap({ weather, soil, activeLanguage, farmerLat, farm
       temp: "तापमान",
       ph: "पीएच",
       gpsFetching: "स्थान खोजा जा रहा है",
+      addressFetching: "खेत का पता खोजा जा रहा है",
+      addressOk: "पता सिंक ओके",
       gpsOk: "जीपीएस सिंक ओके",
       gpsFailed: "डिफ़ॉल्ट पंजाब स्थान"
     },
@@ -92,6 +97,8 @@ export default function FarmMap({ weather, soil, activeLanguage, farmerLat, farm
       temp: "ਤਾਪਮาน",
       ph: "pH",
       gpsFetching: "ਜੀਪੀਐਸ ਲੱਭ ਰਿਹਾ ਹੈ",
+      addressFetching: "ਖੇਤ ਦਾ ਪਤਾ ਲੱਭ ਰਿਹਾ ਹੈ",
+      addressOk: "ਪਤਾ ਸਿੰਕ ਓਕੇ",
       gpsOk: "ਜੀਪੀਐਸ ਓਕੇ",
       gpsFailed: "ਪੰਜਾਬ ਕੋਆਰਡੀਨੇਟਸ"
     },
@@ -211,79 +218,86 @@ export default function FarmMap({ weather, soil, activeLanguage, farmerLat, farm
 
   const t = labels[activeLanguage] || labels["en"];
 
-  // Sync coords state if props update from profile, resolving common names if they are defaults
+  // Prefer precise address geocoding, then retain the existing coordinate/GPS fallback.
   useEffect(() => {
-    let resolvedLat = farmerLat;
-    let resolvedLng = farmerLng;
+    let cancelled = false;
+    const address = farmerAddress?.trim();
 
-    const hasDefaultCoords = !farmerLat || !farmerLng || (Math.abs(farmerLat - 30.2115) < 0.0001 && Math.abs(farmerLng - 74.9525) < 0.0001);
-    
-    if (hasDefaultCoords && typeof window !== "undefined") {
-      const session = localStorage.getItem("kisaan_session");
-      let profileLoc = "";
-      if (session) {
-        const stored = localStorage.getItem(`kisaan_user_${session}`);
-        if (stored) {
-          try {
-            const parsed = JSON.parse(stored);
-            profileLoc = parsed.location || "";
-          } catch(e){}
-        }
+    const applyLegacyCoordinates = () => {
+      if (cancelled) return;
+      if (farmerLat && farmerLng) {
+        setCoords({ lat: farmerLat, lng: farmerLng });
+        setLocationStatus("GPS_SYNC_OK");
+        return;
       }
-      
-      if (profileLoc) {
-        const resolved = getCoordinatesForAddress(profileLoc);
-        resolvedLat = resolved.lat;
-        resolvedLng = resolved.lng;
-      }
-    }
 
-    if (resolvedLat && resolvedLng) {
-      setCoords({ lat: resolvedLat, lng: resolvedLng });
-      setLocationStatus("GPS_SYNC_OK");
-    }
-  }, [farmerLat, farmerLng]);
-
-  // Request HTML5 Location coordinates on component mount
-  useEffect(() => {
-    if (typeof window !== "undefined" && navigator.geolocation) {
-      setLocationStatus("FETCHING_GPS_PERMISSION");
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          setCoords({
-            lat: position.coords.latitude,
-            lng: position.coords.longitude
-          });
-          setLocationStatus("GPS_SYNC_OK");
-        },
-        (error) => {
-          // Attempt to resolve coordinates dynamically via farmer's profile location text
-          const session = localStorage.getItem("kisaan_session");
-          let profileLoc = "";
-          if (session) {
-            const stored = localStorage.getItem(`kisaan_user_${session}`);
-            if (stored) {
-              try {
-                const parsed = JSON.parse(stored);
-                profileLoc = parsed.location || "";
-              } catch(e){}
+      if (typeof window !== "undefined" && navigator.geolocation) {
+        setLocationStatus("FETCHING_GPS_PERMISSION");
+        navigator.geolocation.getCurrentPosition(
+          (position) => {
+            if (!cancelled) {
+              setCoords({
+                lat: position.coords.latitude,
+                lng: position.coords.longitude
+              });
+              setLocationStatus("GPS_SYNC_OK");
             }
-          }
-          if (profileLoc) {
-            const resolved = getCoordinatesForAddress(profileLoc);
-            setCoords(resolved);
-            setLocationStatus("GPS_SYNC_OK");
-          } else {
-            if (!farmerLat || !farmerLng) {
+          },
+          () => {
+            if (!cancelled) {
               setCoords({ lat: 30.2115, lng: 74.9525 });
+              setLocationStatus("GPS_FAILED_FALLBACK");
             }
-            setLocationStatus("GPS_FAILED_FALLBACK");
-          }
-        },
-        { enableHighAccuracy: true, timeout: 6000, maximumAge: 0 }
-      );
+          },
+          { enableHighAccuracy: true, timeout: 6000, maximumAge: 0 }
+        );
+        return;
+      }
+
+      setCoords({ lat: 30.2115, lng: 74.9525 });
+      setLocationStatus("GPS_FAILED_FALLBACK");
+    };
+
+    if (!address) {
+      applyLegacyCoordinates();
+      return () => {
+        cancelled = true;
+      };
     }
-  }, [farmerLat, farmerLng]);
+
+    setLocationStatus("FETCHING_ADDRESS");
+    fetch("http://localhost:8000/api/location/resolve", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        address,
+        fallback_lat: farmerLat,
+        fallback_lng: farmerLng
+      })
+    })
+      .then((response) => {
+        if (!response.ok) throw new Error("Address geocoding failed");
+        return response.json();
+      })
+      .then((result: { latitude?: number; longitude?: number }) => {
+        const lat = Number(result.latitude);
+        const lng = Number(result.longitude);
+        if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
+          throw new Error("Address coordinates unavailable");
+        }
+        if (!cancelled) {
+          setCoords({ lat, lng });
+          setLocationStatus("ADDRESS_SYNC_OK");
+        }
+      })
+      .catch(() => {
+        if (!cancelled) applyLegacyCoordinates();
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [farmerAddress, farmerLat, farmerLng]);
 
   // Google satellite terrain view clean URL structure (t=k forces satellite maps without redirect search panels)
   const mapIframeUrl = `https://maps.google.com/maps?q=${coords.lat},${coords.lng}&t=k&z=17&output=embed`;
@@ -304,7 +318,7 @@ export default function FarmMap({ weather, soil, activeLanguage, farmerLat, farm
         {/* Active badge */}
         <span className="text-[8px] font-bold text-emerald-450 uppercase tracking-widest font-mono bg-emerald-950 px-2 py-1 rounded border border-emerald-500/20 flex items-center gap-1">
           <span className="w-1.5 h-1.5 bg-emerald-450 rounded-full animate-ping"></span>
-          {locationStatus === "GPS_SYNC_OK" ? `GEO_SYNC: ${coords.lat.toFixed(4)}, ${coords.lng.toFixed(4)}` : locationStatus === "FETCHING_GPS_PERMISSION" ? t.gpsFetching : t.gpsFailed}
+          {locationStatus === "GPS_SYNC_OK" ? `GEO_SYNC: ${coords.lat.toFixed(4)}, ${coords.lng.toFixed(4)}` : locationStatus === "ADDRESS_SYNC_OK" ? `${t.addressOk || "ADDRESS_SYNC_OK"}: ${coords.lat.toFixed(4)}, ${coords.lng.toFixed(4)}` : locationStatus === "FETCHING_ADDRESS" ? (t.addressFetching || "RESOLVING_FARM_ADDRESS") : locationStatus === "FETCHING_GPS_PERMISSION" ? t.gpsFetching : t.gpsFailed}
         </span>
       </div>
 

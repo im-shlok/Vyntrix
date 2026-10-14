@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -47,6 +47,7 @@ export default function Dashboard() {
   const [showNewsDropdown, setShowNewsDropdown] = useState<boolean>(false);
   const [newsItems, setNewsItems] = useState<any[]>([]);
   const [loadingNews, setLoadingNews] = useState<boolean>(false);
+  const agentRequestKeyRef = useRef<string | null>(null);
 
   const fetchNews = async () => {
     setLoadingNews(true);
@@ -422,9 +423,25 @@ export default function Dashboard() {
     router.push("/auth");
   };
 
-  // Automatically retrieve live multi-agent telemetry data on page mount and tab change with retries
+  // Retrieve live multi-agent telemetry once for each profile/language state.
   useEffect(() => {
     let active = true;
+    let retryTimeout: ReturnType<typeof setTimeout> | null = null;
+    const requestKey = [
+      activeLanguage,
+      farmerProfile.current_crop || 'Rice',
+      farmerProfile.location || 'Noida'
+    ].join('|');
+
+    if (agentRequestKeyRef.current === requestKey) {
+      return () => {
+        active = false;
+        if (retryTimeout) clearTimeout(retryTimeout);
+      };
+    }
+
+    agentRequestKeyRef.current = requestKey;
+
     const fetchInitialAgentData = async (retryCount = 0) => {
       if (farmerProfile.location === "Loading...") return;
       try {
@@ -456,7 +473,7 @@ export default function Dashboard() {
         console.error("Initial agent load error:", e);
         if (retryCount < 3 && active) {
           console.log(`Retrying agent query (${retryCount + 1}/3) in 3s...`);
-          setTimeout(() => {
+          retryTimeout = setTimeout(() => {
             fetchInitialAgentData(retryCount + 1);
           }, 3000);
         }
@@ -469,8 +486,9 @@ export default function Dashboard() {
 
     return () => {
       active = false;
+      if (retryTimeout) clearTimeout(retryTimeout);
     };
-  }, [isAuthenticated, activeLanguage, farmerProfile.current_crop, farmerProfile.location, activeTab]);
+  }, [isAuthenticated, activeLanguage, farmerProfile.current_crop, farmerProfile.location]);
 
     // Voice Command Controller for Dashboard navigation
   useEffect(() => {
@@ -1011,6 +1029,14 @@ export default function Dashboard() {
                 <span className="text-xs font-extrabold text-white tracking-wide">{farmerProfile.farmer_name}</span>
                 <span className="text-[8px] font-mono text-zinc-500 tracking-wider">LOC: {farmerProfile.location.toUpperCase()}</span>
               </div>
+              <button
+                onClick={() => router.push("/profile")}
+                className="p-2 rounded-xl border border-white/10 text-zinc-400 hover:text-emerald-400 hover:border-emerald-500/30 transition-colors"
+                title="Edit farmer profile"
+                aria-label="Edit farmer profile"
+              >
+                <Settings size={14} />
+              </button>
               <div className="w-8 h-8 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-450 flex items-center justify-center font-mono font-black text-xs shadow-inner animate-pulse-soft">
                 {farmerProfile.farmer_name.substring(0, 2).toUpperCase()}
               </div>
@@ -1150,6 +1176,7 @@ export default function Dashboard() {
                     activeLanguage={activeLanguage}
                     farmerLat={farmerProfile.lat}
                     farmerLng={farmerProfile.lng}
+                    farmerAddress={[farmerProfile.address, farmerProfile.location].filter(Boolean).join(", ")}
                   />
                 </div>
 
