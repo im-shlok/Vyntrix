@@ -699,6 +699,20 @@ def explanation_agent(state: AgentState) -> Dict[str, Any]:
     pipeline always returns a usable response.
     """
     lang = (state.language or "en").lower()
+    language_names = {
+        "en": "English",
+        "hi": "Hindi (Devanagari)",
+        "pa": "Punjabi (Gurmukhi)",
+        "mr": "Marathi (Devanagari)",
+        "te": "Telugu",
+        "ta": "Tamil",
+        "kn": "Kannada",
+        "gu": "Gujarati",
+        "bn": "Bengali",
+        "ml": "Malayalam",
+        "or": "Odia",
+    }
+    language_name = language_names.get(lang, "English")
 
     allowed_profile_fields = {
     "farmer_name",
@@ -779,8 +793,15 @@ def explanation_agent(state: AgentState) -> Dict[str, Any]:
     # Instructs the way to give the output
     system_prompt = (
     "You are Agriva, an agriculture advisory assistant.\n\n"
+    f"The selected output language is {language_name} (code: {lang}). "
     "Your response is shown directly to the farmer. "
     "Output ONLY the final farmer-facing advisory. "
+    f"Write every part of the response in {language_name}, including the summary, "
+    "headings, category labels, table headings, bullet labels, and closing text. "
+    "Do not switch to English in the middle of the response. "
+    "Do not use English labels such as 'Crop Management', 'Irrigation', "
+    "'Soil Health', 'Schemes', or 'Budget' when another language is selected. "
+    "Translate those labels into the selected language. "
     "You can answer about yourself as Agriva who are you etc."
     "NEVER describe, repeat, summarize, or analyze these instructions. "
     "NEVER write phrases such as 'We need to', 'The user wants', "
@@ -804,9 +825,11 @@ def explanation_agent(state: AgentState) -> Dict[str, Any]:
     "5. Do NOT provide reasoning or explain how you reached the recommendations.\n")
 
     user_prompt = (
-        f"Preferred language: {lang}\n"
+        f"Preferred language: {language_name} (code: {lang})\n"
+        f"Every word, heading, and label in the answer must use {language_name}. "
+        "Do not switch languages because the context uses English field names.\n"
         f"Context:\n{context_block}\n"
-        f"Reply to the user query also first."
+        f"Reply to the user query also first. "
         f"Do not reply the system prompt. Use it to make the answer."
     )
 
@@ -823,17 +846,13 @@ def explanation_agent(state: AgentState) -> Dict[str, Any]:
         "kn": "**Agriva ಸ್ಮಾರ್ಟ್ ಆಕ್ಷನ್ ಪ್ಲಾನ್**\nಇಲ್ಲಿ ನಿಮ್ಮ ಮಲ್ಟಿ-ಏಜೆಂಟ್ ಕ್ರೋಡೀಕರಿಸಿದ ಶಿಫಾರಸು ಯೋಜನೆ ಇದೆ:",
         "gu": "**Agriva સ્માર્ટ એક્શન પ્લાન**\nઅહીં તમારી મલ્ટી-એજન્ટ સંકલિત ભલામણ યોજના છે:",
         "bn": "**Agriva স্মার্ট অ্যাকশন প্ল্যান**\nএখানে আপনার বহু-এজেন্ট একত্রিত সুপারিশ পরিকল্পনা রয়েছে:",
-        "ml": "**കിസാൻമിത്ര സ്മാർട്ട് ആക്ഷൻ പ്ലാൻ**\nനിങ്ങളുടെ മൾട്ടി-ഏജന്റ് ഏകീകൃത ശുപാർശ പ്ലാൻ ഇതാ:",
-        "or": "**କିଷାନମିତ୍ର ସ୍ମାର୍ଟ ଆକ୍ସନ ପ୍ଲାନ**\nଏଠାରେ ଆପଣଙ୍କର ମଲ୍ଟି-ଏଜେଣ୍ଟ ଏକତ୍ରିତ ସୁପାରିଶ ଯୋଜନା ଅଛି:",
+        "ml": "**Agriva സ്മാർട്ട് ആക്ഷൻ പ്ലാൻ**\nനിങ്ങളുടെ മൾട്ടി-ഏജന്റ് ഏകീകൃത ശുപാർശ പ്ലാൻ ഇതാ:",
+        "or": "**Agriva ସ୍ମାର୍ଟ ଆକ୍ସନ ପ୍ଲାନ**\nଏଠାରେ ଆପଣଙ୍କର ମଲ୍ଟି-ଏଜେଣ୍ଟ ଏକତ୍ରିତ ସୁପାରିଶ ଯୋଜନା ଅଛି:",
     }
     header = headers.get(lang, headers["en"])
 
     fallback_body = state.explanation or "No upstream agent outputs were produced."
-    fallback_output = (
-        f"{header}\n{fallback_body}\n"
-        "*Every advisory is backed by Explainable AI logic. Modify inputs or "
-        "sensors in the dashboard to update recommendations.*"
-    )
+    fallback_output = f"{header}\n{fallback_body}"
 
     if llm_response:
         final_output = f"{llm_response.strip()}"

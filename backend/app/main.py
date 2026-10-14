@@ -1,6 +1,9 @@
 import os
 import shutil
 import json
+from urllib.error import HTTPError, URLError
+from urllib.parse import urlencode
+from urllib.request import Request, urlopen
 from gtts import gTTS
 from dotenv import load_dotenv
 import speech_recognition as sr
@@ -83,11 +86,31 @@ client = OpenAI(
     api_key=os.getenv("NVIDIA_API_KEY", "")
 )
 
+LANGUAGE_NAMES = {
+    "en": "English",
+    "hi": "Hindi (Devanagari)",
+    "pa": "Punjabi (Gurmukhi)",
+    "mr": "Marathi (Devanagari)",
+    "te": "Telugu",
+    "ta": "Tamil",
+    "kn": "Kannada",
+    "gu": "Gujarati",
+    "bn": "Bengali",
+    "ml": "Malayalam",
+    "or": "Odia",
+}
+
 @app.post("/api/chatbot")
 def chatbot_endpoint(request: ChatRequest):
+    language_name = LANGUAGE_NAMES.get(request.language, "English")
     default_system_prompt = f"""
 You are Agriva, an AI assistant specialized ONLY in agriculture.
-The user's preferred language is {request.language}.
+The user's selected language is {language_name} (code: {request.language}).
+Write the entire answer in that language. This includes the summary, headings,
+category labels, table headings, bullet labels, and closing text. Do not switch
+to English in the middle of the answer. Keep unavoidable crop names, product
+names, and standard abbreviations only when they are proper names or have no
+clear translation.
 
 Your domain includes:
 - Crop diseases
@@ -404,3 +427,34 @@ def update_telemetry(data: Dict[str, Any]):
 @app.get("/api/marketplace/prices")
 def get_mandi_prices():
     return MANDI_PRICES
+
+@app.get("/api/mandi/records")
+def get_mandi_records():
+    """Proxy current Agmarknet records without exposing the government API key."""
+    api_key = os.getenv("GOV_API_KEY")
+    if not api_key:
+        raise HTTPException(status_code=503, detail="GOV_API_KEY is not configured")
+
+    query = urlencode({
+        "api-key": api_key,
+        "format": "json",
+        "limit": "10",
+        "sort[arrival_date]": "desc",
+    })
+    request = Request(
+        f"https://api.data.gov.in/resource/9ef84268-d588-465a-a308-a864a43d0070?{query}",
+        headers={"User-Agent": "Agriva/1.0"},
+    )
+
+    try:
+        with urlopen(request, timeout=20) as response:
+            payload = json.load(response)
+    except HTTPError as error:
+        raise HTTPException(status_code=502, detail=f"Agmarknet returned HTTP {error.code}") from error
+    except (URLError, TimeoutError, json.JSONDecodeError) as error:
+        raise HTTPException(status_code=502, detail="Unable to fetch Agmarknet records") from error
+
+    if not isinstance(payload, dict) or not isinstance(payload.get("records"), list):
+        raise HTTPException(status_code=502, detail="Agmarknet returned an invalid records payload")
+
+    return payload
