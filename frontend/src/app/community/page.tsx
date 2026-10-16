@@ -25,6 +25,41 @@ interface ChatMessage {
   timestamp: string;
 }
 
+interface TelemetrySnapshot {
+  nitrogen: number;
+  phosphorus: number;
+  potassium: number;
+}
+
+interface MandiPrice {
+  crop?: string;
+  commodity?: string;
+  mandi?: string;
+  market?: string;
+  state?: string;
+  price?: number | string;
+  modal_price?: number | string;
+  msp?: number | string;
+}
+
+interface CommunityStats {
+  telemetry: TelemetrySnapshot | null;
+  mandiPrices: MandiPrice[];
+  mandiSource: 'government' | 'backend' | null;
+}
+
+const toFiniteNumber = (value: unknown): number | null => {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : null;
+};
+
+const formatPpm = (value: number | undefined) => value === undefined ? '—' : `${Math.round(value)} ppm`;
+
+const formatRupees = (value: unknown) => {
+  const parsed = toFiniteNumber(value);
+  return parsed === null ? '—' : `₹${parsed.toLocaleString('en-IN')} / Ql`;
+};
+
 export default function CommunityPage() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [newMessage, setNewMessage] = useState<string>("");
@@ -35,6 +70,8 @@ export default function CommunityPage() {
   const [loadingMessages, setLoadingMessages] = useState<boolean>(true);
   const [posting, setPosting] = useState<boolean>(false);
   const [communityError, setCommunityError] = useState<string | null>(null);
+  const [stats, setStats] = useState<CommunityStats>({ telemetry: null, mandiPrices: [], mandiSource: null });
+  const [loadingStats, setLoadingStats] = useState<boolean>(true);
 
   const LANGUAGES = [
     { code: "en", label: "English" },
@@ -51,7 +88,7 @@ export default function CommunityPage() {
   ];
 
   // 11-Language localization mapping for Community Chat
-  const localization: any = {
+  const localization = {
     en: {
       tagline: "Public Farmer Community Chat",
       title: "Farmer Community Chat Board",
@@ -62,7 +99,7 @@ export default function CommunityPage() {
       backBtn: "Dashboard",
       homeBtn: "Portal Home",
       npkTitle: "National Crop Soil Score",
-      npkDesc: "Aggregated telemetry averages streamed from 1,200 active farmer nodes. Current calibration:",
+      npkDesc: "Latest readings from connected farm telemetry:",
       outbreakTitle: "Active Pathology Outbreaks",
       outbreakDesc: "Recent pathogen leaf scan alerts logged across state clusters:",
       mspTitle: "MSP Price Indices",
@@ -79,7 +116,7 @@ export default function CommunityPage() {
       backBtn: "डैशबोर्ड",
       homeBtn: "पोर्टल होम",
       npkTitle: "राष्ट्रीय फसल मिट्टी स्कोर",
-      npkDesc: "1,200 सक्रिय किसान नोड्स से स्ट्रीम किए गए एकीकृत टेलीमेट्री औसत।",
+      npkDesc: "जुड़े हुए खेत सेंसर से नवीनतम रीडिंग:",
       outbreakTitle: "सक्रिय रोग आउटब्रेक",
       outbreakDesc: "राज्य समूहों में लॉग किए गए हालिया पत्ती रोग स्कैन अलर्ट:",
       mspTitle: "एमएसपी मूल्य सूचकांक",
@@ -96,7 +133,7 @@ export default function CommunityPage() {
       backBtn: "ਡੈਸ਼ਬੋਰਡ",
       homeBtn: "ਪੋਰਟਲ ਹੋਮ",
       npkTitle: "ਰਾਸ਼ਟਰੀ ਫਸਲ ਮਿੱਟੀ ਸਕੋਰ",
-      npkDesc: "1,200 ਸਰਗਰਮ ਕਿਸਾਨ ਨੋਡਾਂ ਤੋਂ ਸਟ੍ਰੀਮ ਕੀਤੇ ਔਸਤ ਟੈਲੀਮੈਟਰੀ ਅੰਕੜੇ।",
+      npkDesc: "ਜੁੜੇ ਹੋਏ ਖੇਤ ਸੈਂਸਰਾਂ ਤੋਂ ਤਾਜ਼ਾ ਰੀਡਿੰਗ:",
       outbreakTitle: "ਸਰਗਰਮ ਰੋਗ ਆਊਟਬ੍ਰੇਕ",
       outbreakDesc: "ਰਾਜ ਸਮੂਹਾਂ ਵਿੱਚ ਹਾਲ ਹੀ ਵਿੱਚ ਲੌਗ ਕੀਤੇ ਪੱਤੇ ਦੇ ਸਕੈਨ ਅਲਰਟ:",
       mspTitle: "MSP ਕੀਮਤ ਸੂਚਕਾਂਕ",
@@ -113,7 +150,7 @@ export default function CommunityPage() {
       backBtn: "डॅशबोर्ड",
       homeBtn: "पोर्टल होम",
       npkTitle: "राष्ट्रीय पीक माती निर्देशांक",
-      npkDesc: "१,२०० नोड्सवरून गोळा केलेली सरासरी माती टेलीमेट्री आकडेवारी.",
+      npkDesc: "जोडलेल्या शेत सेन्सरवरील नवीनतम रीडिंग:",
       outbreakTitle: "सक्रिय पीक रोग चेतावणी",
       outbreakDesc: "विविध राज्यांतून प्राप्त झालेले पानावरील रोगांचे स्कॅन अहवाल:",
       mspTitle: "एमएसपी किंमत दर",
@@ -130,7 +167,7 @@ export default function CommunityPage() {
       backBtn: "డాష్‌బోర్డ్",
       homeBtn: "పోర్టల్ హోమ్",
       npkTitle: "జాతీయ పంటల నేల స్కోర్",
-      npkDesc: "1,200 క్రియాశీల నోడ్స్ నుండి సేకరించిన టెలిమెట్రీ సగటులు.",
+      npkDesc: "కనెక్ట్ చేసిన వ్యవసాయ సెన్సర్ల తాజా రీడింగ్స్:",
       outbreakTitle: "సక్రియ వ్యాధి హెచ్చరికలు",
       outbreakDesc: "వివిధ ప్రాంతాలలో నమోదైన పంట తెగుళ్ల సమాచారం:",
       mspTitle: "MSP కనీస మద్దతు ధరలు",
@@ -147,7 +184,7 @@ export default function CommunityPage() {
       backBtn: "டாஷ்போர்டு",
       homeBtn: "முகப்பு பக்கம்",
       npkTitle: "தேசிய மண் ஆரோக்கிய குறியீடு",
-      npkDesc: "1,200 செயலில் உள்ள முனையங்களிலிருந்து பெறப்பட்ட சராசரி அளவீடுகள்.",
+      npkDesc: "இணைக்கப்பட்ட பண்ணை சென்சார்களின் சமீபத்திய அளவீடுகள்:",
       outbreakTitle: "செயலில் உள்ள நோய் பாதிப்புகள்",
       outbreakDesc: "சமீபத்தில் பதிவான இலை நோய் பாதிப்பு விவரங்கள்:",
       mspTitle: "MSP குறைந்தபட்ச ஆதரவு விலை",
@@ -164,7 +201,7 @@ export default function CommunityPage() {
       backBtn: "ಡ್ಯಾಶ್‌ಬೋರ್ಡ್",
       homeBtn: "ಮುಖಪುಟ",
       npkTitle: "ರಾಷ್ಟ್ರೀಯ ಮಣ್ಣಿನ ಆರೋಗ್ಯ ಸೂಚ್ಯಂಕ",
-      npkDesc: "1,200 ಸಕ್ರಿಯ ನೋಡ್‌ಗಳಿಂದ ಸಂಗ್ರಹಿಸಲಾದ ಟೆಲಿಮೆಟ್ರಿ ಸರಾಸರಿಗಳು.",
+      npkDesc: "ಸಂಪರ್ಕಿತ ಕೃಷಿ ಸೆನ್ಸರ್‌ಗಳ ಇತ್ತೀಚಿನ ರೀಡಿಂಗ್‌ಗಳು:",
       outbreakTitle: "ಸಕ್ರಿಯ ಬೆಳೆ ರೋಗ ಹರಡುವಿಕೆ",
       outbreakDesc: "ಇತ್ತೀಚೆಗೆ ದಾಖಲಾದ ಬೆಳೆ ರೋಗಗಳ ಸ್ಕ್ಯಾನ್ ಮಾಹಿತಿ:",
       mspTitle: "MSP ಬೆಂಬಲ ಬೆಲೆ ಸೂಚ್ಯಂಕ",
@@ -181,7 +218,7 @@ export default function CommunityPage() {
       backBtn: "ડેશબોર્ડ",
       homeBtn: "પોર્ટલ હોમ",
       npkTitle: "રાષ્ટ્રીય જમીન ગુણવત્તા આંક",
-      npkDesc: "1,200 સક્રિય નોડ્સથી સ્ટ્રીમ કરવામાં આવેલ સરેરાશ ટેલિમેટ્રી.",
+      npkDesc: "જોડાયેલા ખેતર સેન્સરની તાજેતરની રીડિંગ્સ:",
       outbreakTitle: "સક્રિય પાક રોગ ચેતવણીઓ",
       outbreakDesc: "તાજેતરમાં નોંધાયેલા પાંદડાના રોગ સ્કેન રિપોર્ટ:",
       mspTitle: "MSP લઘુત્તમ ટેકાના ભાવ",
@@ -198,7 +235,7 @@ export default function CommunityPage() {
       backBtn: "ড্যাশবোর্ড",
       homeBtn: "পোর্টাল হোম",
       npkTitle: "জাতীয় ফসলি মাটির সূচক",
-      npkDesc: "১,২০০টি সক্রিয় নোড থেকে প্রাপ্ত গড় টেলিমেট্রি তথ্য।",
+      npkDesc: "সংযুক্ত খামার সেন্সর থেকে সর্বশেষ রিডিং:",
       outbreakTitle: "সক্রিয় ফসল রোগ প্রাদুর্ভাব",
       outbreakDesc: "সম্প্রতি নথিভুক্ত পাতার রোগ স্ক্যান অ্যালার্ট:",
       mspTitle: "MSP ন্যূনতম সহায়ক মূল্য",
@@ -215,7 +252,7 @@ export default function CommunityPage() {
       backBtn: "ഡാഷ്‌ബോർഡ്",
       homeBtn: "ഹോം പേജ്",
       npkTitle: "ദേശീയ മണ്ണാരോഗ്യ സൂചിക",
-      npkDesc: "1,200 സജീവ കർഷക നോഡുകളിൽ നിന്നുള്ള ശരാശരി ടെലിമെട്രി വിവരങ്ങൾ.",
+      npkDesc: "ബന്ധിപ്പിച്ച കൃഷി സെൻസറുകളിൽ നിന്നുള്ള ഏറ്റവും പുതിയ റീഡിംഗുകൾ:",
       outbreakTitle: "സജീവ രോഗബാധകൾ",
       outbreakDesc: "സമീപകാലത്ത് രേഖപ്പെടുത്തിയ വിള രോഗ സൂചനകൾ:",
       mspTitle: "MSP താങ്ങുവില വിവരങ്ങൾ",
@@ -232,7 +269,7 @@ export default function CommunityPage() {
       backBtn: "ଡ୍ୟାସବୋର୍ଡ",
       homeBtn: "ପୋର୍ଟାଲ୍ ହୋମ୍",
       npkTitle: "ଜାତୀୟ ଫସଲ ମୃତ୍ତିକା ସ୍ୱାସ୍ଥ୍ୟ ସୂଚକ",
-      npkDesc: "୧,୨୦୦ ସକ୍ରିୟ ନୋଡ୍‌ରୁ ପ୍ରାପ୍ତ ହୋଇଥିବା ହାରାହାରି ଟେଲିମେଟ୍ରି ତଥ୍ୟ ।",
+      npkDesc: "ସଂଯୁକ୍ତ ଫାର୍ମ ସେନ୍ସରରୁ ସର୍ବଶେଷ ରିଡିଂ:",
       outbreakTitle: "ସକ୍ରିୟ ଫସଲ ରୋଗ ପ୍ରକୋପ",
       outbreakDesc: "ସଦ୍ୟ ରେକର୍ଡ ହୋଇଥିବା ପତ୍ର ରୋଗ ସ୍କାନ୍ ଆଲର୍ଟ:",
       mspTitle: "MSP ସର୍ବନିମ୍ନ ସହାୟକ ମୂଲ୍ୟ",
@@ -241,16 +278,18 @@ export default function CommunityPage() {
     }
   };
 
-  const t = localization[activeLanguage] || localization["en"];
+  const t = localization[activeLanguage as keyof typeof localization] || localization.en;
 
   // Initialize and check active session
   useEffect(() => {
     let active = true;
 
     const loadCommunity = async () => {
-      const [sessionResult, postsResult] = await Promise.allSettled([
+      const [sessionResult, postsResult, telemetryResult, mandiResult] = await Promise.allSettled([
         apiFetch<{ user?: { username?: string }; profile?: { farmer_name?: string } }>('/api/auth/me'),
         apiFetch<ChatMessage[]>('/api/community/posts'),
+        apiFetch<TelemetrySnapshot>('/api/iot/telemetry'),
+        apiFetch<MandiPrice[]>('/api/marketplace/prices'),
       ]);
 
       if (!active) return;
@@ -268,6 +307,20 @@ export default function CommunityPage() {
       } else {
         setCommunityError(postsResult.reason instanceof Error ? postsResult.reason.message : 'Could not load community posts.');
       }
+
+      if (telemetryResult.status === 'fulfilled') {
+        setStats((current) => ({ ...current, telemetry: telemetryResult.value }));
+      }
+
+      if (mandiResult.status === 'fulfilled' && Array.isArray(mandiResult.value)) {
+        setStats((current) => ({ ...current, mandiPrices: mandiResult.value, mandiSource: 'backend' }));
+      }
+
+      if (telemetryResult.status === 'rejected' && mandiResult.status === 'rejected') {
+        setCommunityError('Live farm metrics are temporarily unavailable.');
+      }
+
+      setLoadingStats(false);
       setLoadingMessages(false);
     };
 
@@ -309,9 +362,11 @@ export default function CommunityPage() {
   const filteredMessages = selectedTag === "All" 
     ? messages 
     : messages.filter(m => m.tag === selectedTag);
+  const pestAlerts = messages.filter((message) => message.tag.toLowerCase() === '#pestalerts');
+  const mandiRows = stats.mandiPrices.filter((item) => toFiniteNumber(item.msp) !== null).slice(0, 2);
 
   return (
-    <div className="min-h-screen bg-transparent text-[#e6f4ea] relative overflow-hidden font-sans p-4 md:p-6 space-y-4 selection:bg-emerald-500 selection:text-white">
+    <div className="community-page min-h-screen relative overflow-hidden font-sans p-4 md:p-6 space-y-4 selection:bg-emerald-500 selection:text-white">
       <Preloader />
 
       {/* Gridline background overlay */}
@@ -460,7 +515,7 @@ export default function CommunityPage() {
                 filteredMessages.map(msg => (
                   <div 
                     key={msg.id}
-                    className="glass-panel p-4 bg-black/40 border border-white/10 rounded-xl space-y-2 text-left relative overflow-hidden transition-all hover:border-white/15"
+                     className="community-post-card glass-panel p-4 bg-black/40 border border-white/10 rounded-xl space-y-2 text-left relative overflow-hidden transition-all hover:border-emerald-300"
                   >
                     <div className="flex justify-between items-start">
                       <div className="flex items-center gap-2">
@@ -500,9 +555,9 @@ export default function CommunityPage() {
           <div className="lg:col-span-5 space-y-4">
             
             {/* Aggregated Soil Card */}
-            <div className="glass-panel p-5 bg-gradient-to-tr from-emerald-955/15 via-black/40 to-transparent border border-white/10 rounded-xl space-y-4 text-left">
+             <div className="community-stat-card glass-panel p-5 bg-gradient-to-tr from-emerald-955/15 via-black/40 to-transparent border border-white/10 rounded-xl space-y-4 text-left">
               <div className="flex justify-between items-center border-b border-white/5 pb-2">
-                <span className="text-[9px] font-black text-emerald-450 font-mono tracking-widest uppercase">AGGREGATED_NPK</span>
+                <span className="text-[9px] font-black text-emerald-450 font-mono tracking-widest uppercase">LIVE_NPK_TELEMETRY</span>
                 <Globe size={14} className="text-emerald-400 animate-pulse" />
               </div>
               <h3 className="text-sm font-bold text-white leading-tight">{t.npkTitle}</h3>
@@ -510,24 +565,30 @@ export default function CommunityPage() {
                 {t.npkDesc}
               </p>
 
-              <div className="grid grid-cols-3 gap-2 font-mono text-center">
-                <div className="bg-black/60 p-2.5 rounded border border-white/5">
-                  <span className="text-[8px] text-zinc-500 block uppercase font-bold">Nitrogen</span>
-                  <span className="text-emerald-450 text-xs font-black">172 ppm</span>
+              {loadingStats ? (
+                <div className="rounded border border-white/5 bg-black/60 p-3 text-center text-[10px] font-mono font-bold text-zinc-500 animate-pulse">
+                  Syncing soil telemetry...
                 </div>
-                <div className="bg-black/60 p-2.5 rounded border border-white/5">
-                  <span className="text-[8px] text-zinc-500 block uppercase font-bold">Phosphorus</span>
-                  <span className="text-emerald-450 text-xs font-black">44 ppm</span>
+              ) : (
+                <div className="grid grid-cols-3 gap-2 font-mono text-center">
+                  <div className="bg-black/60 p-2.5 rounded border border-white/5">
+                    <span className="text-[8px] text-zinc-500 block uppercase font-bold">Nitrogen</span>
+                    <span className="text-emerald-450 text-xs font-black">{formatPpm(stats.telemetry?.nitrogen)}</span>
+                  </div>
+                  <div className="bg-black/60 p-2.5 rounded border border-white/5">
+                    <span className="text-[8px] text-zinc-500 block uppercase font-bold">Phosphorus</span>
+                    <span className="text-emerald-450 text-xs font-black">{formatPpm(stats.telemetry?.phosphorus)}</span>
+                  </div>
+                  <div className="bg-black/60 p-2.5 rounded border border-white/5">
+                    <span className="text-[8px] text-zinc-500 block uppercase font-bold">Potassium</span>
+                    <span className="text-emerald-450 text-xs font-black">{formatPpm(stats.telemetry?.potassium)}</span>
+                  </div>
                 </div>
-                <div className="bg-black/60 p-2.5 rounded border border-white/5">
-                  <span className="text-[8px] text-zinc-500 block uppercase font-bold">Potassium</span>
-                  <span className="text-emerald-450 text-xs font-black">210 ppm</span>
-                </div>
-              </div>
+              )}
             </div>
 
             {/* Disease metrics card */}
-            <div className="glass-panel p-5 bg-gradient-to-tr from-fuchsia-955/15 via-black/40 to-transparent border border-white/10 rounded-xl space-y-3 text-left">
+             <div className="community-stat-card glass-panel p-5 bg-gradient-to-tr from-fuchsia-955/15 via-black/40 to-transparent border border-white/10 rounded-xl space-y-3 text-left">
               <div className="flex justify-between items-center border-b border-white/5 pb-2">
                 <span className="text-[9px] font-black text-fuchsia-400 font-mono tracking-widest uppercase">DISEASE_TRACKER</span>
                 <Activity size={14} className="text-fuchsia-400 animate-pulse" />
@@ -538,21 +599,23 @@ export default function CommunityPage() {
               </p>
 
               <div className="space-y-1.5 font-mono text-[9px] font-semibold text-zinc-350">
-                <div className="flex justify-between p-2 bg-black/60 rounded border border-white/5">
-                  <span>Tomato Early Blight</span>
-                  <span className="text-fuchsia-400 font-bold">42 Nodes (Punjab)</span>
-                </div>
-                <div className="flex justify-between p-2 bg-black/60 rounded border border-white/5">
-                  <span>Rice Leaf Blast</span>
-                  <span className="text-fuchsia-400 font-bold">18 Nodes (Haryana)</span>
-                </div>
+                {pestAlerts.length > 0 ? pestAlerts.slice(0, 2).map((alert) => (
+                  <div key={alert.id} className="flex justify-between gap-3 p-2 bg-black/60 rounded border border-white/5">
+                    <span className="truncate" title={alert.content}>{alert.content}</span>
+                    <span className="text-fuchsia-400 font-bold shrink-0">{alert.location || alert.author}</span>
+                  </div>
+                )) : (
+                  <div className="p-2 bg-black/60 rounded border border-white/5 text-zinc-500">
+                    No active community pest alerts.
+                  </div>
+                )}
               </div>
             </div>
 
             {/* Mandi trends */}
-            <div className="glass-panel p-5 bg-gradient-to-tr from-yellow-955/15 via-black/40 to-transparent border border-white/10 rounded-xl space-y-3 text-left">
+             <div className="community-stat-card glass-panel p-5 bg-gradient-to-tr from-yellow-955/15 via-black/40 to-transparent border border-white/10 rounded-xl space-y-3 text-left">
               <div className="flex justify-between items-center border-b border-white/5 pb-2">
-                <span className="text-[9px] font-black text-yellow-500 font-mono tracking-widest uppercase">MANDI_MSP_INDEX</span>
+                <span className="text-[9px] font-black text-yellow-500 font-mono tracking-widest uppercase">MANDI_MSP_API</span>
                 <TrendingUp size={14} className="text-yellow-500" />
               </div>
               <h3 className="text-sm font-bold text-white">{t.mspTitle}</h3>
@@ -560,16 +623,24 @@ export default function CommunityPage() {
                 {t.mspDesc}
               </p>
 
-              <div className="space-y-1.5 font-mono text-[9px] font-semibold text-zinc-350">
-                <div className="flex justify-between p-2 bg-black/60 rounded border border-white/5">
-                  <span>Wheat (Kanak)</span>
-                  <span className="text-yellow-405 font-bold">₹2,275 / Ql</span>
+              {loadingStats ? (
+                <div className="rounded border border-white/5 bg-black/60 p-3 text-center text-[10px] font-mono font-bold text-zinc-500 animate-pulse">
+                  Syncing mandi prices...
                 </div>
-                <div className="flex justify-between p-2 bg-black/60 rounded border border-white/5">
-                  <span>Paddy (Dhan)</span>
-                  <span className="text-yellow-405 font-bold">₹2,183 / Ql</span>
+              ) : mandiRows.length > 0 ? (
+                <div className="space-y-1.5 font-mono text-[9px] font-semibold text-zinc-350">
+                  {mandiRows.map((item) => (
+                    <div key={`${item.crop || item.commodity}-${item.mandi || item.market}`} className="flex justify-between gap-3 p-2 bg-black/60 rounded border border-white/5">
+                      <span className="truncate" title={item.crop || item.commodity || 'Crop'}>{item.crop || item.commodity || 'Crop'}</span>
+                      <span className="text-yellow-405 font-bold shrink-0">{formatRupees(item.msp)}</span>
+                    </div>
+                  ))}
                 </div>
-              </div>
+              ) : (
+                <div className="rounded border border-white/5 bg-black/60 p-2 text-[9px] font-mono font-semibold text-zinc-500">
+                  MSP data is currently unavailable.
+                </div>
+              )}
             </div>
 
           </div>
