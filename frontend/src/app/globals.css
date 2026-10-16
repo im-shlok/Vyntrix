@@ -261,6 +261,143 @@ body {
   color: #61786a !important;
 }
 
+.community-footer {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  margin-top: 2rem;
+  margin-bottom: 1rem;
+  padding: 1rem 1.25rem;
+  overflow: hidden;
+  border: 1px solid #cfe1d2;
+  border-radius: 1.25rem;
+  background: linear-gradient(110deg, #ffffff 0%, #f4faf4 62%, #eef8f0 100%);
+  box-shadow: 0 12px 28px rgba(39, 83, 52, 0.1);
+}
+
+.community-footer::before {
+  position: absolute;
+  inset: 0 0 auto;
+  height: 3px;
+  background: linear-gradient(90deg, #16804b, #75b849, #dfaa37);
+  content: "";
+}
+
+.community-footer-brand {
+  display: flex;
+  min-width: 15rem;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.community-footer-mark {
+  display: grid;
+  width: 2.25rem;
+  height: 2.25rem;
+  flex: 0 0 auto;
+  place-items: center;
+  border: 1px solid #b9d8bd;
+  border-radius: 0.8rem;
+  background: #e7f4e9;
+}
+
+.community-footer-kicker {
+  margin: 0;
+  color: #176b43;
+  font-family: var(--font-mono, ui-monospace), monospace;
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.11em;
+}
+
+.community-footer-copy {
+  margin: 0.2rem 0 0;
+  color: #607767;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.community-footer-statuses {
+  display: flex;
+  flex: 1 1 auto;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.community-footer-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.45rem 0.7rem;
+  border: 1px solid;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 750;
+  white-space: nowrap;
+}
+
+.community-footer-status--green {
+  border-color: #b9ddc2;
+  background: #edf9ef;
+  color: #176b43;
+}
+
+.community-footer-status--gold {
+  border-color: #ead7aa;
+  background: #fff9e8;
+  color: #8a641c;
+}
+
+.community-footer-status-dot {
+  width: 0.45rem;
+  height: 0.45rem;
+  border-radius: 50%;
+  background: currentColor;
+  box-shadow: 0 0 0 3px color-mix(in srgb, currentColor 14%, transparent);
+}
+
+.community-footer-meta {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 0.55rem;
+  color: #708477;
+  font-family: var(--font-mono, ui-monospace), monospace;
+  font-size: 0.68rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.community-footer-meta-divider {
+  color: #b2c6b5;
+}
+
+@media (max-width: 768px) {
+  .community-footer {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 1rem;
+    padding: 1.1rem;
+  }
+
+  .community-footer-brand,
+  .community-footer-statuses,
+  .community-footer-meta {
+    width: 100%;
+  }
+
+  .community-footer-statuses {
+    justify-content: flex-start;
+  }
+
+  .community-footer-meta {
+    flex-wrap: wrap;
+    white-space: normal;
+  }
+}
+
 /* Shared dark glass panels keep the marketing and auth surfaces readable. */
 .glass-panel {
   background: rgba(13, 31, 22, 0.94);

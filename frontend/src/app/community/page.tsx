@@ -648,23 +648,34 @@ export default function CommunityPage() {
         </div>
 
         {/* Footer */}
-        <div className="h-[1px] w-full bg-gradient-to-r from-fuchsia-500 via-cyan-500 to-yellow-500 opacity-25 mt-10 mb-6" />
-    {/* Floating Cyber Footer */}
-    <footer className="max-w-4xl mx-auto w-[92%] p-4 bg-[#050806]/85 border border-white/10 rounded-2xl mt-8 mb-6 shrink-0 flex flex-col md:flex-row justify-between items-center gap-4 backdrop-blur-md font-mono text-[9px] text-zinc-500 select-none shadow-[0_0_20px_rgba(0,0,0,0.4)]">
-      <div className="flex flex-wrap items-center justify-center gap-3">
-        <span className="flex items-center gap-1.5 text-emerald-455 font-bold bg-emerald-950/45 px-2.5 py-1 rounded-xl border border-emerald-500/10">
-          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping"></span>
-          [PEER_CHAT: CONNECTED]
-        </span>
-        <span className="flex items-center gap-1.5 text-yellow-455 font-bold bg-yellow-950/45 px-2.5 py-1 rounded-xl border border-yellow-500/10">
-          <span className="w-1.5 h-1.5 rounded-full bg-yellow-500 animate-pulse"></span>
-          [FEED_SYNC: ONLINE]
-        </span>
-      </div>
-      <div className="flex items-center gap-3">
-        <span>© 2026 AGRIVA // LIVE_COMMUNITY_CONSOLE</span>
-      </div>
-    </footer>
+        <footer className="community-footer" aria-label="Agriva community status">
+          <div className="community-footer-brand">
+            <div className="community-footer-mark">
+              <Image src="/logo.png" alt="" width={34} height={34} className="h-8 w-8 rounded-full object-cover" />
+            </div>
+            <div>
+              <p className="community-footer-kicker">AGRIVA COMMUNITY</p>
+              <p className="community-footer-copy">Practical farm knowledge, shared by farmers.</p>
+            </div>
+          </div>
+
+          <div className="community-footer-statuses" aria-label="Service status">
+            <span className="community-footer-status community-footer-status--green">
+              <span className="community-footer-status-dot" aria-hidden="true" />
+              Community chat online
+            </span>
+            <span className="community-footer-status community-footer-status--gold">
+              <span className="community-footer-status-dot" aria-hidden="true" />
+              Market data synced
+            </span>
+          </div>
+
+          <div className="community-footer-meta">
+            <span>© 2026 Agriva</span>
+            <span className="community-footer-meta-divider" aria-hidden="true">•</span>
+            <span>Built for farmers across India</span>
+          </div>
+        </footer>
 
       </div>
     </div>
