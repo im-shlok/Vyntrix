@@ -372,7 +372,7 @@ export default function CommunityPage() {
       {/* Gridline background overlay */}
       <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(255,255,255,0.035)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.035)_1px,transparent_1px)] bg-[size:44px_44px] pointer-events-none z-0" />
 
-      <div className="max-w-6xl mx-auto space-y-6 relative z-10">
+      <div className="community-content max-w-6xl mx-auto space-y-6 relative z-10">
         
         {/* Navbar */}
         <nav className="glass-panel px-6 py-2.5 flex justify-between items-center bg-[#090d0a]/80 border border-white/10 rounded-full shadow-lg">
