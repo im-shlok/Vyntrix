@@ -1,6 +1,23 @@
 import os
 import datetime
-from sqlalchemy import create_engine, Column, Integer, String, Float, Text, DateTime
+import hashlib
+import hmac
+import secrets
+from typing import Optional
+
+from sqlalchemy import (
+    Boolean,
+    Column,
+    DateTime,
+    Float,
+    ForeignKey,
+    Integer,
+    String,
+    Text,
+    create_engine,
+    inspect,
+    text,
+)
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 
@@ -26,8 +43,13 @@ class FarmerProfile(Base):
     __tablename__ = "farmer_profiles"
     
     id = Column(Integer, primary_key=True, index=True)
+    # Nullable for backwards compatibility with the original seeded profile.
+    # New profiles are always associated with a server-owned User.
+    user_id = Column(Integer, ForeignKey("users.id"), unique=True, index=True, nullable=True)
     farmer_name = Column(String(100), default="Ramesh Kumar")
+    contact_number = Column(String(30), default="")
     location = Column(String(100), default="Bhatinda, Punjab")
+    address = Column(String(500), default="")
     current_crop = Column(String(50), default="Tomato")
     land_size_hectares = Column(Float, default=1.5)
     soil_type = Column(String(50), default="Loam")
@@ -35,6 +57,42 @@ class FarmerProfile(Base):
     irrigation_type = Column(String(50), default="Drip")
     budget = Column(String(50), default="Medium")
     language = Column(String(10), default="en")
+    latitude = Column(Float, nullable=True)
+    longitude = Column(Float, nullable=True)
+
+
+class User(Base):
+    """Application account; password_hash never contains a plaintext password."""
+
+    __tablename__ = "users"
+
+    id = Column(Integer, primary_key=True, index=True)
+    username = Column(String(255), unique=True, index=True, nullable=False)
+    password_hash = Column(String(255), nullable=False)
+    created_at = Column(DateTime, default=datetime.datetime.utcnow, nullable=False)
+
+
+class UserSession(Base):
+    """Opaque, revocable server-side sessions keyed by a hash of the cookie token."""
+
+    __tablename__ = "user_sessions"
+
+    id = Column(Integer, primary_key=True, index=True)
+    token_hash = Column(String(64), unique=True, index=True, nullable=False)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    created_at = Column(DateTime, default=datetime.datetime.utcnow, nullable=False)
+    expires_at = Column(DateTime, nullable=False)
+    revoked = Column(Boolean, default=False, nullable=False)
+
+
+class CommunityPost(Base):
+    __tablename__ = "community_posts"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    tag = Column(String(50), default="#General", nullable=False)
+    content = Column(Text, nullable=False)
+    created_at = Column(DateTime, default=datetime.datetime.utcnow, nullable=False, index=True)
 
 class LocationCache(Base):
     __tablename__ = "location_cache"
@@ -87,8 +145,34 @@ def get_db():
         db.close()
 
 def init_db():
-    """Initializes tables and populates default farmer profile if missing."""
+    """Initialize tables, upgrading the original SQLite profile table in place."""
     Base.metadata.create_all(bind=engine)
+
+    # ``create_all`` intentionally does not alter existing tables. The shipped
+    # database predates authenticated profiles, so add only the new nullable
+    # columns needed by that table. This keeps existing local installs usable
+    # without requiring Alembic for this small application.
+    if "sqlite" in DATABASE_URL:
+        profile_columns = {
+            column["name"] for column in inspect(engine).get_columns("farmer_profiles")
+        }
+        additions = {
+            "user_id": "INTEGER",
+            "contact_number": "VARCHAR(30)",
+            "address": "VARCHAR(500)",
+            "latitude": "FLOAT",
+            "longitude": "FLOAT",
+        }
+        with engine.begin() as connection:
+            for column_name, column_type in additions.items():
+                if column_name not in profile_columns:
+                    connection.execute(
+                        text(
+                            f"ALTER TABLE farmer_profiles ADD COLUMN "
+                            f"{column_name} {column_type}"
+                        )
+                    )
+
     db = SessionLocal()
     try:
         # Check if profile already exists, if not seed a default profile
@@ -109,3 +193,91 @@ def init_db():
             db.commit()
     finally:
         db.close()
+
+
+PASSWORD_HASH_SCHEME = "scrypt"
+PASSWORD_SCRYPT_N = 2**14
+PASSWORD_SCRYPT_R = 8
+PASSWORD_SCRYPT_P = 1
+PASSWORD_SALT_BYTES = 16
+
+
+def hash_password(password: str) -> str:
+    """Hash a password with a per-password salt using the stdlib scrypt KDF."""
+    salt = secrets.token_bytes(PASSWORD_SALT_BYTES)
+    digest = hashlib.scrypt(
+        password.encode("utf-8"),
+        salt=salt,
+        n=PASSWORD_SCRYPT_N,
+        r=PASSWORD_SCRYPT_R,
+        p=PASSWORD_SCRYPT_P,
+    )
+    return "$".join(
+        (
+            PASSWORD_HASH_SCHEME,
+            str(PASSWORD_SCRYPT_N),
+            str(PASSWORD_SCRYPT_R),
+            str(PASSWORD_SCRYPT_P),
+            salt.hex(),
+            digest.hex(),
+        )
+    )
+
+
+def verify_password(password: str, encoded_hash: str) -> bool:
+    """Verify a password without exposing timing differences for a valid hash."""
+    try:
+        scheme, n, r, p, salt_hex, digest_hex = encoded_hash.split("$")
+        if scheme != PASSWORD_HASH_SCHEME:
+            return False
+        candidate = hashlib.scrypt(
+            password.encode("utf-8"),
+            salt=bytes.fromhex(salt_hex),
+            n=int(n),
+            r=int(r),
+            p=int(p),
+        )
+        return hmac.compare_digest(candidate, bytes.fromhex(digest_hex))
+    except (TypeError, ValueError, UnicodeError):
+        return False
+
+
+def hash_session_token(token: str) -> str:
+    return hashlib.sha256(token.encode("utf-8")).hexdigest()
+
+
+def create_session(db, user: User, ttl_seconds: int) -> str:
+    """Create a random cookie token while storing only its SHA-256 digest."""
+    token = secrets.token_urlsafe(32)
+    db.add(
+        UserSession(
+            token_hash=hash_session_token(token),
+            user_id=user.id,
+            expires_at=datetime.datetime.utcnow()
+            + datetime.timedelta(seconds=ttl_seconds),
+        )
+    )
+    db.commit()
+    return token
+
+
+def user_for_session(db, token: Optional[str]) -> Optional[User]:
+    """Resolve a live session token to its user, revoking expired sessions."""
+    if not token:
+        return None
+    session = (
+        db.query(UserSession)
+        .filter(
+            UserSession.token_hash == hash_session_token(token),
+            UserSession.revoked.is_(False),
+        )
+        .first()
+    )
+    if not session:
+        return None
+    now = datetime.datetime.utcnow()
+    if session.expires_at <= now:
+        session.revoked = True
+        db.commit()
+        return None
+    return db.query(User).filter(User.id == session.user_id).first()

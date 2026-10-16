@@ -8,15 +8,16 @@ import threading
 import uuid
 from urllib.error import HTTPError, URLError
 from urllib.parse import urlencode, quote
-from urllib.request import Request, urlopen
+from urllib.request import Request as URLRequest, urlopen
 from gtts import gTTS
 from dotenv import load_dotenv
 import speech_recognition as sr
 from pydub import AudioSegment
-from fastapi import FastAPI, UploadFile, File, Form, HTTPException
+from fastapi import Depends, FastAPI, Request, Response, UploadFile, File, Form, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
+from sqlalchemy.exc import IntegrityError
 import cv2
 import numpy as np
 try:
@@ -31,9 +32,19 @@ from typing import Dict, Any, Optional
 from app.core.database import (
     init_db,
     SessionLocal,
+    User,
+    UserSession,
     LocationCache,
     AgentOutputCache,
-    TelemetrySnapshot
+    CommunityPost,
+    FarmerProfile,
+    TelemetrySnapshot,
+    create_session,
+    hash_password,
+    hash_session_token,
+    get_db,
+    user_for_session,
+    verify_password,
 )
 from app.core.redis_client import redis_client
 from app.core.chatbot import LANGUAGE_NAMES, ask_agriva
@@ -221,6 +232,306 @@ class LocationResolveRequest(BaseModel):
     fallback_lat: Optional[float] = None
     fallback_lng: Optional[float] = None
 
+
+SESSION_COOKIE_NAME = os.getenv("SESSION_COOKIE_NAME", "agriva_session")
+SESSION_TTL_SECONDS = int(os.getenv("SESSION_TTL_SECONDS", str(60 * 60 * 24 * 30)))
+SESSION_COOKIE_SECURE = os.getenv("SESSION_COOKIE_SECURE", "false").lower() == "true"
+
+
+class AuthRegisterRequest(BaseModel):
+    # ``email`` is accepted as an alias for clients that call their account ID
+    # an email; the server keeps one normalized username identity.
+    username: Optional[str] = None
+    email: Optional[str] = None
+    password: str = Field(min_length=8, max_length=256)
+    farmer_name: Optional[str] = None
+    contact_number: Optional[str] = None
+    location: Optional[str] = None
+    address: Optional[str] = None
+    current_crop: Optional[str] = None
+    land_size_hectares: Optional[float] = Field(default=None, ge=0)
+    soil_type: Optional[str] = None
+    ph: Optional[float] = Field(default=None, ge=0, le=14)
+    irrigation_type: Optional[str] = None
+    budget: Optional[str] = None
+    language: Optional[str] = None
+    lat: Optional[float] = None
+    lng: Optional[float] = None
+
+
+class AuthLoginRequest(BaseModel):
+    username: Optional[str] = None
+    email: Optional[str] = None
+    password: str = Field(min_length=1, max_length=256)
+
+
+class ProfilePatchRequest(BaseModel):
+    farmer_name: Optional[str] = None
+    contact_number: Optional[str] = None
+    location: Optional[str] = None
+    address: Optional[str] = None
+    current_crop: Optional[str] = None
+    land_size_hectares: Optional[float] = Field(default=None, ge=0)
+    soil_type: Optional[str] = None
+    ph: Optional[float] = Field(default=None, ge=0, le=14)
+    irrigation_type: Optional[str] = None
+    budget: Optional[str] = None
+    language: Optional[str] = None
+    lat: Optional[float] = None
+    lng: Optional[float] = None
+
+
+class CommunityPostRequest(BaseModel):
+    content: str = Field(min_length=1, max_length=5000)
+    tag: str = Field(default="#General", max_length=50)
+
+
+def _serialize_user(user: User) -> dict[str, Any]:
+    return {
+        "id": user.id,
+        "username": user.username,
+        "created_at": user.created_at.isoformat() if user.created_at else None,
+    }
+
+
+def _serialize_profile(profile: FarmerProfile) -> dict[str, Any]:
+    return {
+        "id": profile.id,
+        "user_id": profile.user_id,
+        "farmer_name": profile.farmer_name,
+        "contact_number": profile.contact_number or "",
+        "location": profile.location,
+        "address": profile.address or "",
+        "current_crop": profile.current_crop,
+        "land_size_hectares": profile.land_size_hectares,
+        "soil_type": profile.soil_type,
+        "ph": profile.ph,
+        "irrigation_type": profile.irrigation_type,
+        "budget": profile.budget,
+        "language": profile.language,
+        "lat": profile.latitude,
+        "lng": profile.longitude,
+    }
+
+
+def _default_profile_values() -> dict[str, Any]:
+    return {
+        "farmer_name": "Ramesh Kumar",
+        "contact_number": "",
+        "location": "Bhatinda, Punjab",
+        "address": "",
+        "current_crop": "Tomato",
+        "land_size_hectares": 1.5,
+        "soil_type": "Loam",
+        "ph": 6.7,
+        "irrigation_type": "Drip",
+        "budget": "Medium",
+        "language": "en",
+    }
+
+
+def _get_or_create_profile(db, user: User) -> FarmerProfile:
+    profile = db.query(FarmerProfile).filter(FarmerProfile.user_id == user.id).first()
+    if profile:
+        return profile
+    profile = FarmerProfile(user_id=user.id, **_default_profile_values())
+    db.add(profile)
+    db.commit()
+    db.refresh(profile)
+    return profile
+
+
+def _account_identifier(username: Optional[str], email: Optional[str]) -> str:
+    for candidate in (username, email):
+        normalized = (candidate or "").strip().casefold()
+        if normalized:
+            return normalized
+    return ""
+
+
+def _set_session_cookie(response: Response, token: str) -> None:
+    response.set_cookie(
+        key=SESSION_COOKIE_NAME,
+        value=token,
+        max_age=SESSION_TTL_SECONDS,
+        httponly=True,
+        secure=SESSION_COOKIE_SECURE,
+        samesite="lax",
+        path="/",
+    )
+
+
+def _clear_session_cookie(response: Response) -> None:
+    response.delete_cookie(
+        key=SESSION_COOKIE_NAME,
+        httponly=True,
+        secure=SESSION_COOKIE_SECURE,
+        samesite="lax",
+        path="/",
+    )
+
+
+def get_current_user(request: Request, db=Depends(get_db)) -> User:
+    user = user_for_session(db, request.cookies.get(SESSION_COOKIE_NAME))
+    if not user:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Authentication required")
+    return user
+
+
+def get_optional_user(request: Request, db=Depends(get_db)) -> Optional[User]:
+    return user_for_session(db, request.cookies.get(SESSION_COOKIE_NAME))
+
+
+def _serialize_post(db, post: CommunityPost) -> dict[str, Any]:
+    user = db.query(User).filter(User.id == post.user_id).first()
+    profile = db.query(FarmerProfile).filter(FarmerProfile.user_id == post.user_id).first()
+    display_name = (profile.farmer_name if profile and profile.farmer_name else None) or (
+        user.username if user else "Farmer Node"
+    )
+    location = (profile.location if profile and profile.location else None) or "Self Farm Node"
+    created_at = post.created_at.isoformat() if post.created_at else None
+    return {
+        "id": post.id,
+        "user_id": post.user_id,
+        "username": user.username if user else None,
+        "author": display_name,
+        "location": location,
+        "tag": post.tag,
+        "content": post.content,
+        "timestamp": created_at,
+        "created_at": created_at,
+    }
+
+
+def _auth_payload(user: User, profile: FarmerProfile) -> dict[str, Any]:
+    return {"user": _serialize_user(user), "profile": _serialize_profile(profile)}
+
+
+@app.post("/api/auth/register", status_code=status.HTTP_201_CREATED)
+def register(request: AuthRegisterRequest, response: Response, db=Depends(get_db)):
+    username = _account_identifier(request.username, request.email)
+    if not username:
+        raise HTTPException(status_code=422, detail="Username or email is required")
+    if db.query(User).filter(User.username == username).first():
+        raise HTTPException(status_code=409, detail="Username already registered")
+
+    user = User(username=username, password_hash=hash_password(request.password))
+    db.add(user)
+    try:
+        db.flush()
+        profile_values = _default_profile_values()
+        supplied = request.model_dump(exclude_unset=True)
+        field_map = {"lat": "latitude", "lng": "longitude"}
+        profile_fields = {
+            "farmer_name", "contact_number", "location", "address", "current_crop",
+            "land_size_hectares", "soil_type", "ph", "irrigation_type", "budget",
+            "language", "lat", "lng",
+        }
+        for key in profile_fields:
+            if key in supplied and supplied[key] is not None:
+                profile_values[field_map.get(key, key)] = supplied[key]
+        profile = FarmerProfile(user_id=user.id, **profile_values)
+        db.add(profile)
+        db.commit()
+        db.refresh(user)
+        token = create_session(db, user, SESSION_TTL_SECONDS)
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(status_code=409, detail="Username already registered")
+
+    _set_session_cookie(response, token)
+    return _auth_payload(user, profile)
+
+
+@app.post("/api/auth/login")
+def login(request: AuthLoginRequest, response: Response, db=Depends(get_db)):
+    username = _account_identifier(request.username, request.email)
+    user = db.query(User).filter(User.username == username).first() if username else None
+    if not user or not verify_password(request.password, user.password_hash):
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid username or password")
+    profile = _get_or_create_profile(db, user)
+    token = create_session(db, user, SESSION_TTL_SECONDS)
+    _set_session_cookie(response, token)
+    return _auth_payload(user, profile)
+
+
+@app.post("/api/auth/logout")
+def logout(request: Request, response: Response, db=Depends(get_db)):
+    token = request.cookies.get(SESSION_COOKIE_NAME)
+    if token:
+        session = db.query(UserSession).filter(UserSession.token_hash == hash_session_token(token)).first()
+        if session:
+            session.revoked = True
+            db.commit()
+    _clear_session_cookie(response)
+    return {"status": "logged_out"}
+
+
+@app.get("/api/auth/me")
+def me(user: User = Depends(get_current_user), db=Depends(get_db)):
+    return _auth_payload(user, _get_or_create_profile(db, user))
+
+
+@app.get("/api/profile")
+@app.get("/api/profile/me")
+def get_profile(user: User = Depends(get_current_user), db=Depends(get_db)):
+    return _serialize_profile(_get_or_create_profile(db, user))
+
+
+@app.patch("/api/profile")
+@app.patch("/api/profile/me")
+def update_profile(
+    request: ProfilePatchRequest,
+    user: User = Depends(get_current_user),
+    db=Depends(get_db),
+):
+    profile = _get_or_create_profile(db, user)
+    values = request.model_dump(exclude_unset=True)
+    field_map = {"lat": "latitude", "lng": "longitude"}
+    for key, value in values.items():
+        setattr(profile, field_map.get(key, key), value)
+    db.commit()
+    db.refresh(profile)
+    return _serialize_profile(profile)
+
+
+@app.get("/api/community/posts")
+@app.get("/api/community")
+def get_community_posts(
+    limit: int = 100,
+    offset: int = 0,
+    db=Depends(get_db),
+):
+    limit = max(1, min(limit, 100))
+    offset = max(0, offset)
+    posts = (
+        db.query(CommunityPost)
+        .order_by(CommunityPost.created_at.desc(), CommunityPost.id.desc())
+        .offset(offset)
+        .limit(limit)
+        .all()
+    )
+    return [_serialize_post(db, post) for post in posts]
+
+
+@app.post("/api/community/posts", status_code=status.HTTP_201_CREATED)
+@app.post("/api/community", status_code=status.HTTP_201_CREATED)
+def create_community_post(
+    request: CommunityPostRequest,
+    user: User = Depends(get_current_user),
+    db=Depends(get_db),
+):
+    tag = request.tag.strip() or "#General"
+    if not tag.startswith("#"):
+        tag = f"#{tag}"
+    post = CommunityPost(user_id=user.id, tag=tag[:50], content=request.content.strip())
+    if not post.content:
+        raise HTTPException(status_code=422, detail="Post content is required")
+    db.add(post)
+    db.commit()
+    db.refresh(post)
+    return _serialize_post(db, post)
+
 @app.get("/api/health")
 def health_check():
     return {"status": "healthy", "service": "Agriva Engine", "databases": "connected"}
@@ -246,7 +557,7 @@ def resolve_location(request: LocationResolveRequest):
             }
 
         url = f"https://nominatim.openstreetmap.org/search?format=jsonv2&limit=1&q={quote(address)}"
-        request_obj = Request(
+        request_obj = URLRequest(
             url,
             headers={
                 "Accept": "application/json",
@@ -421,7 +732,10 @@ def chatbot_endpoint(request: ChatRequest):
     }
 
 @app.post("/api/chat")
-def chat_endpoint(request: ChatRequest):
+def chat_endpoint(
+    request: ChatRequest,
+    current_user: Optional[User] = Depends(get_optional_user),
+):
     """Executes the LangGraph Multi-Agent network."""
     profile = request.profile or {}
     allowed_profile_fields = {
@@ -461,6 +775,10 @@ def chat_endpoint(request: ChatRequest):
         })
 
     safe_profile = {key: value for key, value in profile.items() if key in allowed_profile_fields}
+    if current_user:
+        # This context marker is added only from the HttpOnly session. It is
+        # consumed by memory_agent and never exposed in the response profile.
+        safe_profile["_user_id"] = current_user.id
 
     is_telemetry_query = "telemetry status" in request.query.lower()
     cache_key = hashlib.sha256(json.dumps({
@@ -893,7 +1211,7 @@ def get_mandi_records():
         "limit": "10",
         "sort[arrival_date]": "desc",
     })
-    request = Request(
+    request = URLRequest(
         f"https://api.data.gov.in/resource/9ef84268-d588-465a-a308-a864a43d0070?{query}",
         headers={"User-Agent": "Agriva/1.0"},
     )

@@ -8,18 +8,32 @@ def memory_agent(state: AgentState) -> Dict[str, Any]:
     profile = None
     
     try:
-        # Query persistent FarmerProfile from SQL database
-        profile_row = session.query(FarmerProfile).first()
+        # Authenticated requests must only read their own profile. The
+        # unauthenticated path deliberately retains the legacy seeded profile
+        # for existing API consumers.
+        profile_query = session.query(FarmerProfile)
+        # The API places the authenticated ID in a private profile context
+        # field. Accept ``user_id`` as well for direct agent callers/tests.
+        user_id = getattr(state, "user_id", None) or state.farmer_profile.get(
+            "_user_id", state.farmer_profile.get("user_id")
+        )
+        if user_id is not None:
+            profile_query = profile_query.filter(FarmerProfile.user_id == user_id)
+        profile_row = profile_query.first()
         if profile_row:
             profile = {
                 "farmer_name": profile_row.farmer_name,
+                "contact_number": profile_row.contact_number or "",
                 "location": profile_row.location,
+                "address": profile_row.address or "",
                 "current_crop": profile_row.current_crop,
                 "land_size_hectares": profile_row.land_size_hectares,
                 "soil_type": profile_row.soil_type,
                 "ph": profile_row.ph,
                 "irrigation_type": profile_row.irrigation_type,
                 "budget": profile_row.budget,
+                "lat": profile_row.latitude,
+                "lng": profile_row.longitude,
                 "language": profile_row.language,
                 "historical_diseases": ["Early Blight (2025)"]
             }
@@ -34,6 +48,10 @@ def memory_agent(state: AgentState) -> Dict[str, Any]:
                 "ph": 6.8,
                 "irrigation_type": "Drip",
                 "budget": "Medium",
+                "contact_number": "",
+                "address": "",
+                "lat": None,
+                "lng": None,
                 "historical_diseases": ["Early Blight (2025)"],
                 "language": state.language
             }
