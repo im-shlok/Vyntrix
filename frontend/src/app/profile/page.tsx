@@ -52,8 +52,8 @@ const defaultTelemetry: TelemetryForm = {
   potassium: '215'
 };
 
-const inputClass = 'w-full rounded-xl border border-white/10 bg-black/30 px-3 py-2.5 text-sm text-white outline-none transition focus:border-emerald-500/60 focus:ring-1 focus:ring-emerald-500/30';
-const labelClass = 'mb-1.5 block text-[9px] font-mono font-bold uppercase tracking-widest text-zinc-500';
+const inputClass = 'profile-input w-full rounded-xl border px-3 py-2.5 text-sm outline-none transition';
+const labelClass = 'profile-label mb-1.5 block text-[9px] font-mono font-bold uppercase tracking-widest';
 
 export default function ProfilePage() {
   const router = useRouter();
@@ -156,35 +156,35 @@ export default function ProfilePage() {
   };
 
   if (loading) {
-    return <main className="min-h-screen bg-[#020503] p-8 font-mono text-xs text-emerald-400">Loading farmer profile...</main>;
+    return <main className="profile-page min-h-screen p-8 font-mono text-xs">Loading farmer profile...</main>;
   }
 
   return (
-    <main className="min-h-screen bg-[#020503] px-4 py-6 text-zinc-200 md:px-8">
+    <main className="profile-page min-h-screen px-4 py-6 md:px-8">
       <div className="mx-auto max-w-5xl">
-        <header className="mb-6 flex items-center justify-between border-b border-white/10 pb-4">
+          <header className="profile-header mb-6 flex items-center justify-between border-b pb-4">
           <div className="flex items-center gap-3">
-            <button onClick={() => router.push('/dashboard')} className="rounded-xl border border-white/10 p-2 text-zinc-400 transition hover:border-emerald-500/40 hover:text-emerald-400" aria-label="Back to dashboard">
+             <button onClick={() => router.push('/dashboard')} className="profile-icon-button rounded-xl border p-2 transition" aria-label="Back to dashboard">
               <ArrowLeft size={16} />
             </button>
             <div>
               <div className="flex items-center gap-3">
                 <Image src="/logo.png" alt="Agriva logo" width={112} height={32} className="h-8 w-auto object-contain" priority />
-                <span className="font-mono text-[10px] font-bold uppercase tracking-[0.25em] text-emerald-400">[FARMER_PROFILE]</span>
+                 <span className="profile-kicker font-mono text-[10px] font-bold uppercase tracking-[0.25em]">FARMER PROFILE</span>
               </div>
-              <h1 className="mt-1 text-xl font-black text-white">Edit Farm Profile</h1>
+               <h1 className="profile-title mt-1 text-xl font-black">Edit your farm profile</h1>
             </div>
           </div>
-          <span className="hidden rounded-full border border-emerald-500/20 bg-emerald-500/5 px-3 py-1.5 text-[9px] font-mono uppercase tracking-widest text-emerald-400 sm:block">Agriva Node Active</span>
+           <span className="profile-status hidden rounded-full px-3 py-1.5 text-[9px] font-mono uppercase tracking-widest sm:block">Profile ready</span>
         </header>
 
         <form onSubmit={saveChanges} className="space-y-5">
-          <section className="rounded-3xl border border-white/10 bg-white/[0.02] p-5 shadow-2xl md:p-7">
-            <div className="mb-5 flex items-center gap-3 border-b border-white/10 pb-4">
-              <User className="text-emerald-400" size={18} />
+           <section className="profile-section rounded-3xl p-5 shadow-2xl md:p-7">
+             <div className="profile-section-header mb-5 flex items-center gap-3 border-b pb-4">
+               <User className="profile-accent" size={18} />
               <div>
-                <h2 className="text-sm font-bold text-white">Farmer and Farm Details</h2>
-                <p className="text-[10px] text-zinc-500">Update information used for personalized recommendations.</p>
+                 <h2 className="profile-section-title text-sm font-bold">Farmer and farm details</h2>
+                 <p className="profile-muted text-[10px]">Update information used for personalized recommendations.</p>
               </div>
             </div>
             <div className="grid gap-4 md:grid-cols-2">
@@ -200,12 +200,12 @@ export default function ProfilePage() {
             </div>
           </section>
 
-          <section className="rounded-3xl border border-cyan-500/15 bg-cyan-950/[0.08] p-5 shadow-2xl md:p-7">
-            <div className="mb-5 flex items-center gap-3 border-b border-white/10 pb-4">
-              <Droplets className="text-cyan-400" size={18} />
+           <section className="profile-section profile-telemetry-section rounded-3xl p-5 shadow-2xl md:p-7">
+             <div className="profile-section-header mb-5 flex items-center gap-3 border-b pb-4">
+               <Droplets className="profile-cyan-accent" size={18} />
               <div>
-                <h2 className="text-sm font-bold text-white">Soil Telemetry</h2>
-                <p className="text-[10px] text-zinc-500">Enter the latest readings from a soil test or field sensor.</p>
+                 <h2 className="profile-section-title text-sm font-bold">Soil readings</h2>
+                 <p className="profile-muted text-[10px]">Enter the latest readings from a soil test or field sensor.</p>
               </div>
             </div>
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
@@ -215,14 +215,14 @@ export default function ProfilePage() {
               <label><span className={labelClass}>Phosphorus</span><input className={inputClass} type="number" min="0" step="0.1" value={telemetry.phosphorus} onChange={(e) => updateTelemetry('phosphorus', e.target.value)} required /></label>
               <label><span className={labelClass}>Potassium</span><input className={inputClass} type="number" min="0" step="0.1" value={telemetry.potassium} onChange={(e) => updateTelemetry('potassium', e.target.value)} required /></label>
             </div>
-            <div className="mt-4 flex items-start gap-2 text-[10px] leading-relaxed text-zinc-500"><Waves size={13} className="mt-0.5 shrink-0 text-cyan-400" />Temperature and humidity remain sensor-managed. Update them only through the connected telemetry device.</div>
+             <div className="profile-muted mt-4 flex items-start gap-2 text-[10px] leading-relaxed"><Waves size={13} className="profile-cyan-accent mt-0.5 shrink-0" />Temperature and humidity remain sensor-managed. Update them only through the connected telemetry device.</div>
           </section>
 
           {status && <div className={`flex items-center gap-2 rounded-2xl border px-4 py-3 text-xs ${status.type === 'success' ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-300' : 'border-red-500/30 bg-red-500/10 text-red-300'}`}>{status.type === 'success' && <CheckCircle2 size={15} />}{status.text}</div>}
 
-          <div className="flex flex-col-reverse justify-between gap-3 sm:flex-row">
-            <button type="button" onClick={() => router.push('/dashboard')} className="rounded-xl border border-white/10 px-5 py-3 text-xs font-bold text-zinc-400 transition hover:border-white/20 hover:text-white">Cancel</button>
-            <button type="submit" disabled={saving} className="flex items-center justify-center gap-2 rounded-xl bg-emerald-500 px-6 py-3 text-xs font-black text-black transition hover:bg-emerald-400 disabled:cursor-wait disabled:opacity-60"><Save size={15} />{saving ? 'Saving...' : 'Save profile and telemetry'}</button>
+           <div className="flex flex-col-reverse justify-between gap-3 sm:flex-row">
+             <button type="button" onClick={() => router.push('/dashboard')} className="profile-cancel rounded-xl border px-5 py-3 text-xs font-bold transition">Cancel</button>
+             <button type="submit" disabled={saving} className="profile-save flex items-center justify-center gap-2 rounded-xl px-6 py-3 text-xs font-black transition disabled:cursor-wait disabled:opacity-60"><Save size={15} />{saving ? 'Saving...' : 'Save profile and soil readings'}</button>
           </div>
         </form>
       </div>

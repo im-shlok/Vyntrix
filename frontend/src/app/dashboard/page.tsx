@@ -119,53 +119,53 @@ export default function Dashboard() {
   const localization: any = {
     en: {
       tagline: "खेती होगी स्मार्ट, भविष्य होगा मजबूत.",
-      overview: "Overview & Map",
-      diagnostics: "AI Diagnostics",
-      market: "Market & Mandi",
-      crisis: "Crisis & Academy",
-      title: "Farm Control Center",
-      profileHeader: "[MEM_PROFILE_01]",
-      profileSynced: "Synced",
-      healthHeader: "[HEALTH_GAUGE]",
-      healthLabel: "HEALTH_INDEX",
-      calibHeader: "[CALIBRATION_COORDS]",
-      advisoryHeader: "[DECISION_LOG_ADVISORY]",
-      advisorySub: "Action Logs ready",
+      overview: "My farm",
+      diagnostics: "Check a crop",
+      market: "Sell at the best price",
+      crisis: "Safety & learning",
+      title: "Your farm today",
+      profileHeader: "Your farm details",
+      profileSynced: "Up to date",
+      healthHeader: "Farm health",
+      healthLabel: "Farm health",
+      calibHeader: "Soil and weather today",
+      advisoryHeader: "Your farming advice",
+      advisorySub: "Ready to help",
       signOut: "Sign Out",
       community: "Community Chat",
-      nodeLabel: "NODE",
-      regionLabel: "REGION",
-      soilMoisture: "MOISTURE",
-      soilPh: "SOIL pH",
-      soilTemp: "TEMPERATURE",
-      cropLabel: "active_crop",
-      landLabel: "land_holding",
-      restLabel: "REST Telemetry Active"
+      nodeLabel: "Farm",
+      regionLabel: "Your location",
+      soilMoisture: "Soil moisture",
+      soilPh: "Soil pH",
+      soilTemp: "Temperature",
+      cropLabel: "Crop",
+      landLabel: "Farm size",
+      restLabel: "Live sensor data"
     },
     hi: {
       tagline: "खेती होगी स्मार्ट, भविष्य होगा मजबूत.",
-      overview: "अवलोकन और मानचित्र",
-      diagnostics: "एआई निदान",
-      market: "बाजार और मंडी",
-      crisis: "संकट और अकादमी",
-      title: "फार्म नियंत्रण केंद्र",
-      profileHeader: "[स्मृति_प्रोफ़ाइल_01]",
-      profileSynced: "सिंक किया हुआ",
-      healthHeader: "[स्वास्थ्य_मापक]",
-      healthLabel: "स्वास्थ्य_सूचकांक",
-      calibHeader: "[अंशांकन_निर्देशांक]",
-      advisoryHeader: "[निर्णय_लॉग_सलाह]",
-      advisorySub: "सलाह लॉग तैयार हैं",
+      overview: "मेरा खेत",
+      diagnostics: "फसल की जाँच",
+      market: "बेहतर भाव पर बेचें",
+      crisis: "सुरक्षा और सीख",
+      title: "आज आपके खेत में",
+      profileHeader: "आपके खेत की जानकारी",
+      profileSynced: "अपडेट है",
+      healthHeader: "खेत का स्वास्थ्य",
+      healthLabel: "खेत का स्वास्थ्य",
+      calibHeader: "मिट्टी और मौसम आज",
+      advisoryHeader: "आपके लिए खेती की सलाह",
+      advisorySub: "मदद के लिए तैयार",
       signOut: "साइन आउट",
       community: "सामुदायिक चैट",
-      nodeLabel: "नोड",
-      regionLabel: "क्षेत्र",
-      soilMoisture: "नमी",
-      soilPh: "मिट्टी पीएच",
+      nodeLabel: "खेत",
+      regionLabel: "आपका स्थान",
+      soilMoisture: "मिट्टी की नमी",
+      soilPh: "मिट्टी का pH",
       soilTemp: "तापमान",
-      cropLabel: "सक्रिय_फसल",
-      landLabel: "भूमि_स्वामित्व",
-      restLabel: "टेलीमेट्री सक्रिय"
+      cropLabel: "फसल",
+      landLabel: "खेत का आकार",
+      restLabel: "सेंसर डेटा चालू"
     },
     pa: {
       tagline: "खेती होगी स्मार्ट, भविष्य होगा मजबूत.",
@@ -395,6 +395,27 @@ export default function Dashboard() {
   };
 
   const d = localization[activeLanguage] || localization["en"];
+  const quickActions: Record<string, {
+    advice: string;
+    adviceDesc: string;
+    price: string;
+    priceDesc: string;
+    details: string;
+    detailsDesc: string;
+  }> = {
+    en: { advice: "Ask for crop advice", adviceDesc: "Speak, type, or upload a leaf photo", price: "Check today's price", priceDesc: "Compare nearby mandi rates", details: "Update farm details", detailsDesc: "Keep advice accurate for your field" },
+    hi: { advice: "फसल की सलाह लें", adviceDesc: "बोलें, लिखें या पत्ते की फोटो अपलोड करें", price: "आज का भाव देखें", priceDesc: "पास की मंडी के भाव की तुलना करें", details: "खेत की जानकारी अपडेट करें", detailsDesc: "अपने खेत के लिए सटीक सलाह पाएं" },
+    pa: { advice: "ਫਸਲ ਦੀ ਸਲਾਹ ਲਓ", adviceDesc: "ਬੋਲੋ, ਲਿਖੋ ਜਾਂ ਪੱਤੇ ਦੀ ਫੋਟੋ ਅਪਲੋਡ ਕਰੋ", price: "ਅੱਜ ਦਾ ਭਾਅ ਦੇਖੋ", priceDesc: "ਨੇੜਲੀ ਮੰਡੀ ਦੇ ਭਾਅ ਦੀ ਤੁਲਨਾ ਕਰੋ", details: "ਖੇਤ ਦੀ ਜਾਣਕਾਰੀ ਅਪਡੇਟ ਕਰੋ", detailsDesc: "ਆਪਣੇ ਖੇਤ ਲਈ ਸਹੀ ਸਲਾਹ ਪਾਓ" },
+    mr: { advice: "पिकाचा सल्ला घ्या", adviceDesc: "बोला, टाइप करा किंवा पानाचा फोटो अपलोड करा", price: "आजचा भाव पहा", priceDesc: "जवळच्या मंडीच्या दरांची तुलना करा", details: "शेताची माहिती अपडेट करा", detailsDesc: "तुमच्या शेतासाठी अचूक सल्ला मिळवा" },
+    te: { advice: "పంట సలహా అడగండి", adviceDesc: "మాట్లాడండి, టైప్ చేయండి లేదా ఆకు ఫోటోను అప్‌లోడ్ చేయండి", price: "నేటి ధర చూడండి", priceDesc: "సమీప మండి ధరలను పోల్చండి", details: "పొలం వివరాలను అప్‌డేట్ చేయండి", detailsDesc: "మీ పొలానికి ఖచ్చితమైన సలహా పొందండి" },
+    ta: { advice: "பயிர் ஆலோசனை கேளுங்கள்", adviceDesc: "பேசுங்கள், தட்டச்சு செய்யுங்கள் அல்லது இலைப் புகைப்படத்தைப் பதிவேற்றுங்கள்", price: "இன்றைய விலையைப் பாருங்கள்", priceDesc: "அருகிலுள்ள மண்டி விலைகளை ஒப்பிடுங்கள்", details: "பண்ணை விவரங்களைப் புதுப்பிக்கவும்", detailsDesc: "உங்கள் வயலுக்கு துல்லியமான ஆலோசனை பெறுங்கள்" },
+    kn: { advice: "ಬೆಳೆ ಸಲಹೆ ಕೇಳಿ", adviceDesc: "ಮಾತನಾಡಿ, ಟೈಪ್ ಮಾಡಿ ಅಥವಾ ಎಲೆಯ ಫೋಟೋ ಅಪ್‌ಲೋಡ್ ಮಾಡಿ", price: "ಇಂದಿನ ಬೆಲೆ ನೋಡಿ", priceDesc: "ಹತ್ತಿರದ ಮಾರುಕಟ್ಟೆ ಬೆಲೆಗಳನ್ನು ಹೋಲಿಸಿ", details: "ಹೊಲದ ವಿವರಗಳನ್ನು ನವೀಕರಿಸಿ", detailsDesc: "ನಿಮ್ಮ ಹೊಲಕ್ಕೆ ನಿಖರ ಸಲಹೆ ಪಡೆಯಿರಿ" },
+    gu: { advice: "પાકની સલાહ પૂછો", adviceDesc: "બોલો, ટાઇપ કરો અથવા પાનનો ફોટો અપલોડ કરો", price: "આજનો ભાવ જુઓ", priceDesc: "નજીકની મંડીઓના ભાવની સરખામણી કરો", details: "ખેતરની વિગતો અપડેટ કરો", detailsDesc: "તમારા ખેતર માટે સચોટ સલાહ મેળવો" },
+    bn: { advice: "ফসলের পরামর্শ নিন", adviceDesc: "বলুন, টাইপ করুন বা পাতার ছবি আপলোড করুন", price: "আজকের দাম দেখুন", priceDesc: "কাছের মাণ্ডির দাম তুলনা করুন", details: "খেতের তথ্য আপডেট করুন", detailsDesc: "আপনার খেতের জন্য সঠিক পরামর্শ পান" },
+    ml: { advice: "വിളയുടെ ഉപദേശം ചോദിക്കുക", adviceDesc: "സംസാരിക്കുകയോ ടൈപ്പ് ചെയ്യുകയോ ഇലയുടെ ചിത്രം അപ്‌ലോഡ് ചെയ്യുകയോ ചെയ്യുക", price: "ഇന്നത്തെ വില കാണുക", priceDesc: "അടുത്തുള്ള മണ്ടി വിലകൾ താരതമ്യം ചെയ്യുക", details: "കൃഷിയിട വിവരങ്ങൾ പുതുക്കുക", detailsDesc: "നിങ്ങളുടെ കൃഷിയിടത്തിന് കൃത്യമായ ഉപദേശം നേടുക" },
+    or: { advice: "ଫସଲ ପରାମର୍ଶ ନିଅନ୍ତୁ", adviceDesc: "କୁହନ୍ତୁ, ଟାଇପ୍ କରନ୍ତୁ କିମ୍ବା ପତ୍ରର ଫଟୋ ଅପଲୋଡ୍ କରନ୍ତୁ", price: "ଆଜିର ଦର ଦେଖନ୍ତୁ", priceDesc: "ନିକଟସ୍ଥ ମଣ୍ଡି ଦର ତୁଳନା କରନ୍ତୁ", details: "ଚାଷ ଜମିର ବିବରଣୀ ଅପଡେଟ୍ କରନ୍ତୁ", detailsDesc: "ଆପଣଙ୍କ ଜମି ପାଇଁ ସଠିକ୍ ପରାମର୍ଶ ପାଆନ୍ତୁ" }
+  };
+  const quickAction = quickActions[activeLanguage] || quickActions.en;
 
   // Authenticate session on load
   useEffect(() => {
@@ -632,14 +653,14 @@ export default function Dashboard() {
   const needleRotation = ((healthScore / 100) * 180) - 90;
 
   return (
-    <div className="min-h-screen w-full bg-[#020403] text-[#e6f4ea] relative font-sans flex flex-col md:flex-row selection:bg-emerald-500 selection:text-white">
+    <div className="farmer-dashboard min-h-screen w-full bg-[#f4f7ef] text-[#18382b] relative font-sans flex flex-col md:flex-row selection:bg-emerald-500 selection:text-white">
       <Preloader />
 
       {/* Gridline background overlay (Visible Aesthetic Grid) */}
       <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(255,255,255,0.045)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.045)_1px,transparent_1px)] bg-[size:44px_44px] pointer-events-none z-0" />
 
       {/* Left Navigation Sidebar - Desktop (Floating Capsule Design w-52) */}
-      <aside className="w-52 shrink-0 bg-black/90 border border-white/10 shadow-[0_0_50px_rgba(0,0,0,0.8)] hidden md:flex flex-col p-5 space-y-6 h-[calc(100vh-32px)] my-4 ml-4 rounded-3xl sticky top-4 backdrop-blur-md relative z-30 select-none text-left justify-between">
+      <aside className="farmer-panel w-60 shrink-0 bg-white/95 border border-emerald-900/10 shadow-[0_12px_30px_rgba(32,79,51,0.10)] hidden md:flex flex-col p-5 space-y-6 h-[calc(100vh-32px)] my-4 ml-4 rounded-3xl sticky top-4 backdrop-blur-md relative z-30 select-none text-left justify-between">
         <div className="space-y-6">
           {/* Brand Logo */}
           <div 
@@ -783,7 +804,7 @@ export default function Dashboard() {
       )}
 
       {/* Mobile Drawer Panel */}
-      <aside className={`fixed top-0 bottom-0 left-0 w-64 bg-black/95 border-r border-white/10 z-50 p-6 flex flex-col justify-between transition-transform duration-300 md:hidden select-none text-left ${
+      <aside className={`farmer-panel fixed top-0 bottom-0 left-0 w-72 bg-white border-r border-emerald-900/10 z-50 p-6 flex flex-col justify-between transition-transform duration-300 md:hidden select-none text-left ${
         isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'
       }`}>
         <div className="space-y-6">
@@ -892,7 +913,7 @@ export default function Dashboard() {
       <div className="flex-1 flex flex-col min-h-screen min-w-0 bg-transparent relative z-10">
         
         {/* Top Header - Floating Capsule Design (Half-Length) */}
-        <header className="w-[calc(100%-32px)] mx-4 rounded-2xl border border-white/10 bg-black/90 backdrop-blur-md px-6 py-2.5 sticky top-4 z-30 shrink-0 select-none flex justify-between items-center shadow-[0_8px_32px_rgba(0,0,0,0.5)] mt-4">
+        <header className="farmer-panel w-[calc(100%-32px)] mx-4 rounded-2xl border border-emerald-900/10 bg-white/95 backdrop-blur-md px-5 md:px-6 py-3 sticky top-4 z-30 shrink-0 select-none flex justify-between items-center shadow-[0_8px_24px_rgba(32,79,51,0.10)] mt-4">
           {/* Left Title & Mobile Hamburger */}
           <div className="flex items-center gap-3">
             <button 
@@ -901,16 +922,16 @@ export default function Dashboard() {
             >
               <Menu size={16} />
             </button>
-            <span className={`text-[10px] font-mono font-black uppercase tracking-widest ${
+            <span className={`text-sm md:text-base font-extrabold tracking-tight ${
               activeTab === 'overview' ? 'text-emerald-450' :
               activeTab === 'diagnostics' ? 'text-fuchsia-450' :
               activeTab === 'market' ? 'text-yellow-450' :
               'text-red-450'
             }`}>
-              {activeTab === 'overview' ? '// OVERVIEW' :
-               activeTab === 'diagnostics' ? '// DIAGNOSTICS' :
-               activeTab === 'market' ? '// MANDI' :
-               '// SOS_HUB'}
+              {activeTab === 'overview' ? d.overview :
+               activeTab === 'diagnostics' ? d.diagnostics :
+               activeTab === 'market' ? d.market :
+               d.crisis}
             </span>
           </div>
 
@@ -947,7 +968,9 @@ export default function Dashboard() {
             {/* Notification Bell Dropdown Button */}
             <button onClick={(e) => { e.stopPropagation(); setActiveInfoTopic({ title: "Agricultural Broadcasts", desc: "TELEMETRY_BROADCASTS // Checks and displays real-time weather alerts, sub-district emergency warnings, and live agricultural broadcasts parsed from news RSS channels." }); }} className="p-1 rounded-md text-zinc-650 hover:text-white transition-colors cursor-pointer" title="Info"><Info size={11} /></button>
             <div className="relative">
-              <div 
+              <button
+                type="button"
+                aria-label="Open farm alerts"
                 onClick={async () => {
                   setShowNewsDropdown(!showNewsDropdown);
                   setShowNotificationAlert(false);
@@ -955,13 +978,13 @@ export default function Dashboard() {
                     await fetchNews();
                   }
                 }}
-                className="relative w-7 h-7 rounded-xl bg-white/5 hover:bg-white/10 flex items-center justify-center cursor-pointer border border-white/10 transition-colors z-40 animate-pulse-soft"
+                className="relative w-10 h-10 rounded-xl bg-emerald-50 hover:bg-emerald-100 flex items-center justify-center cursor-pointer border border-emerald-200 transition-colors z-40"
               >
-                <Bell size={12} className="text-white" />
+                <Bell size={17} className="text-emerald-700" />
                 {showNotificationAlert && (
-                  <span className="absolute top-1 right-1 w-1.5 h-1.5 rounded-full bg-red-500 border border-black animate-pulse"></span>
+                  <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-red-500 border-2 border-white"></span>
                 )}
-              </div>
+              </button>
 
               {/* Notification Dropdown Drawer Overlay */}
               {showNewsDropdown && (
@@ -1056,7 +1079,7 @@ export default function Dashboard() {
               {/* Dynamic Time-based Greeting Banner */}
               {(() => {
                 const greetings: any = {
-                  en: { morning: "Good Morning", afternoon: "Good Afternoon", evening: "Good Evening", night: "Good Night", welcome: "Welcome back to your farming console." },
+                   en: { morning: "Good morning", afternoon: "Good afternoon", evening: "Good evening", night: "Good night", welcome: "Here is what needs your attention today." },
                   hi: { morning: "शुभ प्रभात", afternoon: "शुभ दोपहर", evening: "शुभ संध्या", night: "शुभ रात्रि", welcome: "अपने कृषि नियंत्रण केंद्र में आपका स्वागत है।" },
                   pa: { morning: "ਸ਼ੁਭ ਸਵੇਰ", afternoon: "ਸ਼ੁਭ ਦੁਪਹਿਰ", evening: "ਸ਼ੁਭ ਸ਼ਾਮ", night: "ਸ਼ੁਭ ਰਾਤ", welcome: "ਆਪਣੇ ਖੇਤੀਬਾੜੀ ਕੰਟਰੋਲ ਕੇਂਦਰ ਵਿੱਚ ਜੀ ਆਇਆਂ ਨੂੰ।" },
                   mr: { morning: "शुभ प्रभात", afternoon: "शुभ दुपार", evening: "शुभ संध्या", night: "शुभ रात्री", welcome: "आपल्या कृषी नियंत्रण केंद्रात स्वागत आहे." },
@@ -1076,65 +1099,107 @@ export default function Dashboard() {
                 else if (hour >= 21 || hour < 5) greetText = gLang.night;
 
                 return (
-                  <div className="col-span-12 bg-gradient-to-r from-emerald-950/25 via-black/45 to-transparent border border-emerald-500/15 p-6 rounded-3xl mb-2 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 relative overflow-hidden shadow-md text-left">
+                   <div className="col-span-12 bg-gradient-to-r from-emerald-50 via-white to-amber-50 border border-emerald-200 p-6 rounded-3xl mb-2 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 relative overflow-hidden shadow-md text-left">
                     <div className="absolute -top-12 -left-12 w-32 h-32 bg-emerald-500/10 rounded-full blur-2xl pointer-events-none" />
                     <div className="relative z-10 space-y-1">
-                      <h2 className="text-md font-black text-white flex items-center gap-2">
+                         <h2 className="text-xl md:text-2xl font-black farmer-heading flex items-center gap-2">
                         <span>{greetText}, {farmerProfile.farmer_name}!</span>
-                        <span className="text-[8px] font-mono font-bold text-emerald-450 bg-emerald-950/60 border border-emerald-500/25 px-2 py-0.5 rounded-full uppercase tracking-wider animate-pulse">
-                          Active Session
+                           <span className="text-[10px] font-bold text-emerald-800 bg-emerald-100 border border-emerald-200 px-2.5 py-1 rounded-full tracking-wide">
+                           Live update
                         </span>
                       </h2>
-                      <p className="text-[10px] text-zinc-300 font-medium">
+                       <p className="text-sm text-zinc-500 font-medium">
                         {gLang.welcome}
                       </p>
                     </div>
-                    <div className="relative z-10 text-right font-mono text-[9px] text-zinc-500 bg-[#060a08]/90 p-2.5 rounded-xl border border-emerald-500/20 space-y-0.5 shadow-sm">
-                      <div>TIME_STAMP: <span className="text-white font-bold">{new Date().toLocaleTimeString(undefined, {hour: '2-digit', minute:'2-digit'})}</span></div>
-                      <div>STATION_LOC: <span className="text-emerald-400 font-bold">{farmerProfile.location.toUpperCase()}</span></div>
+                     <div className="relative z-10 text-right text-xs text-zinc-500 bg-white/75 p-3 rounded-xl border border-emerald-200 space-y-1 shadow-sm">
+                       <div>Updated <span className="text-emerald-800 font-bold">{new Date().toLocaleTimeString(undefined, {hour: '2-digit', minute:'2-digit'})}</span></div>
+                       <div>Location: <span className="text-emerald-700 font-bold">{farmerProfile.location}</span></div>
                     </div>
                   </div>
                 );
-              })()}
-              
-              {/* Left Column (sliders and metrics) */}
+               })()}
+
+               {/* Large, plain-language shortcuts for common farm tasks */}
+               <div className="col-span-12 grid grid-cols-1 sm:grid-cols-3 gap-3">
+                 <button
+                   type="button"
+                   onClick={() => setActiveTab("diagnostics")}
+                   className="farmer-panel group flex items-center gap-3 rounded-2xl p-4 text-left transition hover:-translate-y-0.5 hover:border-emerald-300"
+                 >
+                   <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-emerald-100 text-emerald-700">
+                     <Sparkles size={20} />
+                   </span>
+                   <span>
+                     <span className="block text-sm font-extrabold text-emerald-950">{quickAction.advice}</span>
+                     <span className="block text-xs text-zinc-500 mt-0.5">{quickAction.adviceDesc}</span>
+                   </span>
+                 </button>
+                 <button
+                   type="button"
+                   onClick={() => setActiveTab("market")}
+                   className="farmer-panel group flex items-center gap-3 rounded-2xl p-4 text-left transition hover:-translate-y-0.5 hover:border-amber-300"
+                 >
+                   <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-amber-100 text-amber-700">
+                     <TrendingUp size={20} />
+                   </span>
+                   <span>
+                     <span className="block text-sm font-extrabold text-emerald-950">{quickAction.price}</span>
+                     <span className="block text-xs text-zinc-500 mt-0.5">{quickAction.priceDesc}</span>
+                   </span>
+                 </button>
+                 <Link
+                   href="/profile"
+                   className="farmer-panel group flex items-center gap-3 rounded-2xl p-4 text-left transition hover:-translate-y-0.5 hover:border-sky-300"
+                 >
+                   <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-sky-100 text-sky-700">
+                     <Settings size={20} />
+                   </span>
+                   <span>
+                     <span className="block text-sm font-extrabold text-emerald-950">{quickAction.details}</span>
+                     <span className="block text-xs text-zinc-500 mt-0.5">{quickAction.detailsDesc}</span>
+                   </span>
+                 </Link>
+               </div>
+
+               {/* Left Column (sliders and metrics) */}
               <div className="lg:col-span-4 flex flex-col space-y-4">
                 
                 {/* Farmer Profile Memory Card */}
                 <div className="glass-panel p-4 bg-black/40 border border-white/10">
                   <div className="flex items-center justify-between mb-3 border-b border-white/10 pb-2">
-                    <span className="text-[9px] font-bold text-zinc-500 uppercase tracking-widest font-mono">{d.profileHeader}</span>
-                    <span className="text-[8px] font-bold text-emerald-400 uppercase tracking-wider font-mono">{d.profileSynced}</span>
+                     <span className="text-sm font-extrabold text-emerald-900 tracking-tight">{d.profileHeader}</span>
+                     <span className="text-xs font-bold text-emerald-700 uppercase tracking-wider">{d.profileSynced}</span>
                   </div>
 
-                  <div className="space-y-1.5 text-[11px] font-semibold text-zinc-300 text-left">
-                    <div className="flex justify-between p-2 bg-[#0a0f0c] rounded border border-white/5 font-mono">
-                      <span className="text-zinc-500 text-[9px]">farmer_name</span>
+                   <div className="space-y-1.5 text-sm font-semibold text-zinc-300 text-left">
+                     <div className="flex justify-between gap-3 p-2.5 bg-emerald-50 rounded border border-emerald-100">
+                       <span className="text-zinc-500 text-xs">Farmer</span>
                       <span className="text-white font-bold">{farmerProfile.farmer_name}</span>
                     </div>
                     {farmerProfile.contact_number && (
-                      <div className="flex justify-between p-2 bg-[#0a0f0c] rounded border border-white/5 font-mono">
-                        <span className="text-zinc-500 text-[9px]">contact_number</span>
+                       <div className="flex justify-between gap-3 p-2.5 bg-emerald-50 rounded border border-emerald-100">
+                       <span className="text-zinc-500 text-xs">Phone</span>
                         <span className="text-white font-bold">{farmerProfile.contact_number}</span>
                       </div>
                     )}
-                    <div className="flex justify-between p-2 bg-[#0a0f0c] rounded border border-white/5 font-mono">
-                      <span className="text-zinc-500 text-[9px]">{d.regionLabel}</span>
+                     <div className="flex justify-between gap-3 p-2.5 bg-emerald-50 rounded border border-emerald-100">
+                       <span className="text-zinc-500 text-xs">{d.regionLabel}</span>
                       <span className="text-emerald-400 font-bold">📍 {farmerProfile.location}</span>
                     </div>
                     {farmerProfile.address && (
-                      <div className="flex justify-between p-2 bg-[#0a0f0c] rounded border border-white/5 font-mono">
-                        <span className="text-zinc-500 text-[9px]">farm_address</span>
+                       <div className="flex justify-between gap-3 p-2.5 bg-emerald-50 rounded border border-emerald-100">
+                       <span className="text-zinc-500 text-xs">Farm address</span>
                         <span className="text-white font-bold truncate max-w-[150px]">{farmerProfile.address}</span>
                       </div>
                     )}
-                    <div className="flex justify-between p-2 bg-[#0a0f0c] rounded border border-white/5 font-mono">
-                      <span className="text-zinc-500 text-[9px]">{d.cropLabel}</span>
+                     <div className="flex justify-between gap-3 p-2.5 bg-emerald-50 rounded border border-emerald-100">
+                       <span className="text-zinc-500 text-xs">{d.cropLabel}</span>
                       <span className="text-white font-bold">{farmerProfile.current_crop}</span>
                     </div>
-                    <div className="flex justify-between p-2 bg-[#0a0f0c] rounded border border-white/5 font-mono">
-                      <span className="text-zinc-500 text-[9px]">{d.landLabel}</span>
-                      <span className="text-white font-bold">{farmerProfile.land_size_hectares} Hectares</span>
+                     <div className="flex justify-between gap-3 p-2.5 bg-emerald-50 rounded border border-emerald-100">
+                       <span className="text-zinc-500 text-xs">{d.landLabel}</span>
+                       <span className="text-white font-bold">{farmerProfile.land_size_hectares} hectares</span>
                     </div>
                   </div>
                 </div>
@@ -1144,16 +1209,16 @@ export default function Dashboard() {
                 {/* Government Schemes Recommendation Card */}
                 <div className="glass-panel p-4 bg-black/40 border border-white/10 shrink-0 text-left">
                   <div className="flex justify-between items-center mb-3 border-b border-white/10 pb-2">
-                    <span className="text-[9px] font-bold text-zinc-500 uppercase tracking-widest font-mono">📜 Subsidy & Schemes</span>
-                    <span className="text-[8px] font-bold text-yellow-450 uppercase font-mono">Matched</span>
+                     <span className="text-sm font-extrabold text-emerald-900 tracking-tight">📜 Subsidies and schemes</span>
+                     <span className="text-xs font-bold text-yellow-700 uppercase tracking-wide">Matched for you</span>
                   </div>
                   {agentOutput?.schemes && agentOutput.schemes.length > 0 ? (
                     <div className="space-y-2.5 max-h-56 overflow-y-auto pr-1">
                       {agentOutput.schemes.map((scheme: any, idx: number) => (
-                        <div key={idx} className="p-2.5 bg-[#0a0f0c] rounded-xl border border-white/5 space-y-1">
-                          <div className="text-[10px] font-black text-white">{scheme.name}</div>
-                          <div className="text-[8.5px] text-zinc-400 font-medium leading-normal">{scheme.benefits}</div>
-                          <div className="text-[7.5px] font-mono text-emerald-450">Docs: {scheme.documents?.join(', ')}</div>
+                         <div key={idx} className="scheme-card p-3 rounded-xl space-y-1.5">
+                           <div className="text-sm font-extrabold text-white leading-snug">{scheme.name}</div>
+                           <div className="text-xs text-zinc-400 font-medium leading-relaxed">{scheme.benefits}</div>
+                           <div className="text-[11px] font-semibold text-emerald-450">Documents: {scheme.documents?.join(', ')}</div>
                         </div>
                       ))}
                     </div>
@@ -1184,9 +1249,9 @@ export default function Dashboard() {
                 {/* IoT Calibration Sliders */}
                 <div className="glass-panel p-4 space-y-3 bg-black/40 border border-white/10 shrink-0 text-left">
                   <div className="flex justify-between items-center mb-1 border-b border-white/10 pb-2">
-                    <span className="text-[9px] font-bold text-zinc-500 uppercase tracking-widest font-mono">{d.calibHeader}</span>
+                     <span className="text-sm font-extrabold text-emerald-900 tracking-tight">{d.calibHeader}</span>
                     <button onClick={(e) => { e.stopPropagation(); setActiveInfoTopic({ title: "IoT Telemetry Calibration", desc: "TELEMETRY_READINGS // Real-time soil metrics. User overrides are disabled. Values are locked and updated by the LangGraph agents." }); }} className="p-1 rounded-md text-zinc-650 hover:text-white transition-colors cursor-pointer" title="Info"><Info size={11} /></button>
-                    <span className="text-[8px] font-bold text-emerald-450 uppercase font-mono">{d.restLabel}</span>
+                     <span className="text-xs font-bold text-emerald-700 uppercase tracking-wide">{d.restLabel}</span>
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -1245,25 +1310,25 @@ export default function Dashboard() {
                   {/* Weather Advisory */}
                   <div className="glass-panel p-4 bg-gradient-to-br from-cyan-955/15 via-black/45 to-transparent border border-cyan-500/20 rounded-2xl text-left space-y-2 shadow-md">
                     <div className="flex justify-between items-center pb-2 border-b border-white/5 font-mono text-[9px]">
-                      <span className="text-cyan-400 font-bold uppercase tracking-wider">🌤️ Weather Agent</span>
-                      <span className="text-zinc-500">Live Forecast</span>
+                     <span className="text-cyan-700 font-bold tracking-wide">🌤️ Weather today</span>
+                       <span className="text-zinc-500">Live forecast</span>
                     </div>
                     {agentOutput?.weather_info ? (
                       <div className="space-y-1.5 font-mono text-[10px]">
                         <div className="text-[11px] font-bold text-white flex justify-between">
-                          <span>Temperature:</span>
+                           <span>Temperature</span>
                           <span className="text-cyan-400">{agentOutput.weather_info.temperature}°C</span>
                         </div>
                         <div className="text-[11px] font-bold text-white flex justify-between">
-                          <span>Humidity:</span>
+                           <span>Humidity</span>
                           <span className="text-cyan-400">{agentOutput.weather_info.humidity}%</span>
                         </div>
                         <div className="text-[11px] font-bold text-white flex justify-between">
-                          <span>Rain Chance:</span>
+                           <span>Chance of rain</span>
                           <span className="text-cyan-400">{agentOutput.weather_info.rain_probability}%</span>
                         </div>
                         <p className="text-[9px] text-amber-400 italic pt-1 leading-normal">
-                          Advisory: {agentOutput.weather_info.advisory}
+                           Tip: {agentOutput.weather_info.advisory}
                         </p>
                       </div>
                     ) : (
@@ -1274,25 +1339,25 @@ export default function Dashboard() {
                   {/* Soil Nutrient Advisory */}
                   <div className="glass-panel p-4 bg-gradient-to-br from-emerald-955/15 via-black/45 to-transparent border border-emerald-500/20 rounded-2xl text-left space-y-2 shadow-md">
                     <div className="flex justify-between items-center pb-2 border-b border-white/5 font-mono text-[9px]">
-                      <span className="text-emerald-400 font-bold uppercase tracking-wider">🌱 Soil Nutrient Agent</span>
-                      <span className="text-zinc-500">Telemetry Specs</span>
+                     <span className="text-emerald-700 font-bold tracking-wide">🌱 Soil condition</span>
+                       <span className="text-zinc-500">From your sensors</span>
                     </div>
                     {agentOutput?.soil_data ? (
                       <div className="space-y-1.5 font-mono text-[10px]">
                         <div className="text-[11px] font-bold text-white flex justify-between">
-                          <span>Soil Type:</span>
+                           <span>Soil type</span>
                           <span className="text-emerald-450">{agentOutput.soil_data.soil_type}</span>
                         </div>
                         <div className="text-[11px] font-bold text-white flex justify-between">
-                          <span>Soil pH:</span>
+                           <span>Soil pH</span>
                           <span className="text-fuchsia-400">{agentOutput.soil_data.ph}</span>
                         </div>
                         <div className="text-[10px] font-bold text-zinc-350 flex justify-between pt-0.5">
-                          <span>NPK Levels:</span>
+                           <span>Nutrients</span>
                           <span className="text-emerald-400 font-extrabold">{agentOutput.soil_data.nitrogen}N : {agentOutput.soil_data.phosphorus}P : {agentOutput.soil_data.potassium}K</span>
                         </div>
                         <p className="text-[9px] text-zinc-400 italic pt-1 leading-normal truncate" title={agentOutput.soil_data.advisory}>
-                          Advisory: {agentOutput.soil_data.advisory}
+                           Tip: {agentOutput.soil_data.advisory}
                         </p>
                       </div>
                     ) : (
@@ -1303,25 +1368,25 @@ export default function Dashboard() {
                   {/* Market & Mandi Advisory */}
                   <div className="glass-panel p-4 bg-gradient-to-br from-yellow-955/15 via-black/45 to-transparent border border-yellow-500/20 rounded-2xl text-left space-y-2 shadow-md">
                     <div className="flex justify-between items-center pb-2 border-b border-white/5 font-mono text-[9px]">
-                      <span className="text-yellow-450 font-bold uppercase tracking-wider">📈 Market Agent</span>
-                      <span className="text-zinc-500">Mandi Intelligence</span>
+                     <span className="text-yellow-700 font-bold tracking-wide">📈 Market prices</span>
+                       <span className="text-zinc-500">Nearby mandi</span>
                     </div>
                     {agentOutput?.market_rates ? (
                       <div className="space-y-1.5 font-mono text-[10px]">
                         <div className="text-[11px] font-bold text-white flex justify-between">
-                          <span>Active Mandi:</span>
+                           <span>Market</span>
                           <span className="text-yellow-400 truncate max-w-[90px]" title={agentOutput.market_rates.mandi}>{agentOutput.market_rates.mandi}</span>
                         </div>
                         <div className="text-[11px] font-bold text-white flex justify-between">
-                          <span>Current Price:</span>
+                           <span>Today&apos;s price</span>
                           <span className="text-white font-extrabold">₹{agentOutput.market_rates.price}/q</span>
                         </div>
                         <div className="text-[11px] font-bold text-white flex justify-between">
-                          <span>Best Action:</span>
+                           <span>Best time to sell</span>
                           <span className="text-amber-400 font-black">{agentOutput.market_rates.best_time}</span>
                         </div>
                         <p className="text-[9px] text-zinc-450 italic pt-1 leading-normal">
-                          MSP Support Rate: ₹{agentOutput.market_rates.msp || '2183'}/q
+                           Government support price: ₹{agentOutput.market_rates.msp || '2183'}/q
                         </p>
                       </div>
                     ) : (
@@ -1354,8 +1419,8 @@ export default function Dashboard() {
                 <div className="glass-panel p-6 border border-white/10 bg-black/40 shadow-inner flex flex-col justify-between min-h-[300px] w-full rounded-3xl relative overflow-hidden select-none">
                   <div className="flex-1 min-h-0 flex flex-col">
                     <div className="flex justify-between items-center mb-3 border-b border-white/10 pb-2 shrink-0 font-mono">
-                      <span className="text-[9px] font-bold text-zinc-500 uppercase tracking-widest">{d.advisoryHeader}</span>
-                      <span className="text-[8px] font-bold text-emerald-400 uppercase tracking-wider">{d.advisorySub}</span>
+                      <span className="text-sm font-extrabold text-emerald-900 tracking-tight">{d.advisoryHeader}</span>
+                      <span className="text-xs font-bold text-emerald-700 uppercase tracking-wider">{d.advisorySub}</span>
                     </div>
 
                     {/* Live Visual Routing Chain Graph */}
@@ -1376,18 +1441,13 @@ export default function Dashboard() {
                     <div className="text-xs leading-relaxed text-zinc-300 font-medium space-y-3 select-text flex-1">
                       {explanationText.startsWith("[INIT]") ? (
                         /* Premium Dynamic Terminal Readout - Real-time and Customized! */
-                        <div className="font-mono text-[9.5px] text-emerald-450 space-y-2 text-left bg-black/30 p-4 border border-white/5 rounded-2xl">
-                          <div>[SYSTEM] Agriva OS v2.1 -- Core Compilation Nominal</div>
-                          <div className="text-zinc-650">-----------------------------------------------</div>
-                          <div>[SESSION] User Profile: <span className="text-white font-semibold">{farmerProfile.farmer_name}</span></div>
-                          <div>[SESSION] Location Node: <span className="text-white font-semibold">{farmerProfile.location}</span></div>
-                          <div>[SESSION] Target Crop Focus: <span className="text-white font-semibold">{farmerProfile.current_crop}</span></div>
-                          <div className="text-zinc-650">-----------------------------------------------</div>
-                          <div className="text-cyan-400 tracking-wider font-extrabold animate-pulse">[SYS_STATE: READY_FOR_TELEMETRY_TRIGGERS]</div>
-                          <div className="text-zinc-400 leading-relaxed text-[8.5px] pt-1 space-y-1">
-                            <div>• Speak to the Voice Assistant or type to run multi-agent diagnostic cycles.</div>
-                            <div>• Upload plant leaf scans to analyze early pathogen spots.</div>
-                            <div>• Drag the telemetry sliders below to simulate live IoT sensors.</div>
+                        <div className="text-sm text-emerald-900 space-y-3 text-left bg-emerald-50 p-5 border border-emerald-100 rounded-2xl">
+                          <p className="font-bold text-base">Hello {farmerProfile.farmer_name}, how can we help?</p>
+                          <p className="text-zinc-600 leading-relaxed">Ask a question in your language, upload a clear leaf photo, or check today&apos;s farm conditions.</p>
+                          <div className="text-zinc-600 leading-relaxed space-y-1.5">
+                            <div>• Speak or type: “Why are my leaves turning yellow?”</div>
+                            <div>• For a photo, use a well-lit leaf with the spots visible.</div>
+                            <div>• Use the advice as a guide and contact a local expert for urgent problems.</div>
                           </div>
                         </div>
                       ) : (
@@ -1479,8 +1539,8 @@ export default function Dashboard() {
                   </div>
                 </div>
 
-                <div className="bg-[#0a0f0c] border border-white/5 rounded-lg p-2 text-[8px] text-emerald-500/80 font-mono font-semibold mt-3 shrink-0 text-left">
-                  <span>ORCHESTRATOR_PLANNING_STEPS: COMPILED_SUCCESSFULLY</span>
+                 <div className="bg-emerald-50 border border-emerald-100 rounded-lg p-3 text-xs text-emerald-700 font-semibold mt-3 shrink-0 text-left">
+                   <span>Advice is based on your crop, location, soil and weather data.</span>
               </div>
             </div>
           </div>
@@ -1525,25 +1585,25 @@ export default function Dashboard() {
         </main>
 
         {/* Footer (Floating Capsule Design) */}
-        <footer className="mx-4 mb-4 mt-6 p-4 bg-[#050806]/85 border border-white/10 rounded-2xl shrink-0 flex flex-col md:flex-row justify-between items-center gap-4 backdrop-blur-md font-mono text-[9px] text-zinc-450 select-none shadow-[0_0_20px_rgba(0,0,0,0.4)] relative z-10 text-left">
+        <footer className="farmer-panel mx-4 mb-4 mt-6 p-4 bg-white/90 border border-emerald-900/10 rounded-2xl shrink-0 flex flex-col md:flex-row justify-between items-center gap-4 backdrop-blur-md text-xs text-zinc-450 select-none shadow-[0_0_20px_rgba(32,79,51,0.08)] relative z-10 text-left">
           <div className="flex flex-wrap items-center justify-center gap-3">
             <span className="flex items-center gap-1.5 text-emerald-450 font-bold bg-emerald-950/45 px-2.5 py-1 rounded-xl border border-emerald-500/10">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping"></span>
-              [LINK_STATE: SECURE]
+               Connection ready
             </span>
             <span className="flex items-center gap-1.5 text-cyan-400 font-bold bg-cyan-950/45 px-2.5 py-1 rounded-xl border border-cyan-500/10">
               <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse"></span>
-              [TELEMETRY_DATAFEED: ACTIVE]
+               Live farm data
             </span>
             <span className="flex items-center gap-1.5 text-fuchsia-400 font-bold bg-fuchsia-950/45 px-2.5 py-1 rounded-xl border border-fuchsia-500/10">
               <span className="w-1.5 h-1.5 rounded-full bg-fuchsia-400 animate-pulse"></span>
-              [ENCRYPTION: SHA-256]
+               Your data is private
             </span>
           </div>
           <div className="flex flex-col md:flex-row items-center gap-2 md:gap-4 text-center md:text-right">
             <span className="text-zinc-500">© 2026 Agriva </span>
             <span className="text-emerald-400 font-extrabold uppercase bg-black/60 px-2 py-0.5 rounded border border-white/5">
-              PERSISTENT_NODE // active
+               Agriva farm assistant
             </span>
           </div>
         </footer>

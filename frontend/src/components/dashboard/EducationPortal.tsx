@@ -250,14 +250,14 @@ export default function EducationPortal({ tutorials, quizQuestions, activeLangua
   };
 
   return (
-    <div className="glass-panel p-6 flex flex-col justify-between h-full bg-gradient-to-tr from-indigo-950/10 via-black/40 to-transparent border border-white/10 rounded-3xl shadow-inner relative overflow-hidden select-none text-left">
+    <div className="academy-panel glass-panel p-6 flex flex-col justify-between h-full bg-gradient-to-tr from-indigo-950/10 via-black/40 to-transparent border border-white/10 rounded-3xl shadow-inner relative overflow-hidden select-none text-left">
       
       {/* Visual background elements */}
       <div className="absolute -top-12 -left-12 w-24 h-24 bg-indigo-500/5 rounded-full blur-2xl pointer-events-none" />
 
       <div>
         {/* Header Title */}
-        <div className="flex justify-between items-start mb-5 border-b border-white/5 pb-3">
+        <div className="flex justify-between items-start mb-5 border-b border-indigo-100 pb-3">
           <div>
             <h2 className="text-md font-extrabold flex items-center gap-2 text-white">
               <GraduationCap className="text-indigo-400 animate-pulse animate-blink-slow" size={18} />
@@ -268,16 +268,16 @@ export default function EducationPortal({ tutorials, quizQuestions, activeLangua
         </div>
 
         {/* Tab Selector */}
-        <div className="flex bg-[#040605] p-1 rounded-xl border border-white/5 mb-5 text-xs font-bold text-indigo-400 font-mono">
+        <div className="academy-tabs flex bg-[#040605] p-1 rounded-xl border border-white/5 mb-5 text-xs font-bold text-indigo-400 font-mono">
           <button 
             onClick={() => setActiveTab("tutorials")}
-            className={`flex-1 py-2 rounded-lg transition-all cursor-pointer ${activeTab === 'tutorials' ? 'bg-indigo-650 text-white shadow-sm' : 'hover:bg-indigo-955/20 text-zinc-400'}`}
+             className={`flex-1 py-2 rounded-lg transition-all cursor-pointer ${activeTab === 'tutorials' ? 'bg-indigo-600 text-white shadow-sm' : 'hover:bg-indigo-100 text-zinc-400'}`}
           >
             {t.tutorialsTab}
           </button>
           <button 
             onClick={() => setActiveTab("quiz")}
-            className={`flex-1 py-2 rounded-lg transition-all cursor-pointer ${activeTab === 'quiz' ? 'bg-indigo-650 text-white shadow-sm' : 'hover:bg-indigo-955/20 text-zinc-400'}`}
+             className={`flex-1 py-2 rounded-lg transition-all cursor-pointer ${activeTab === 'quiz' ? 'bg-indigo-600 text-white shadow-sm' : 'hover:bg-indigo-100 text-zinc-400'}`}
           >
             {t.quizTab}
           </button>
@@ -289,7 +289,7 @@ export default function EducationPortal({ tutorials, quizQuestions, activeLangua
             {activeTutorials.map((item, i) => (
               <div 
                 key={i} 
-                className="bg-[#050806] border border-white/5 p-4 rounded-2xl relative overflow-hidden hover:border-indigo-500/20 transition-all duration-300 shadow-sm"
+                className="academy-card bg-[#050806] border border-white/5 p-4 rounded-2xl relative overflow-hidden hover:border-indigo-500/20 transition-all duration-300 shadow-sm"
               >
                 {/* Slanted decoration bar */}
                 <div className="absolute left-0 top-0 bottom-0 w-[3px] bg-indigo-500/50" />
@@ -327,7 +327,7 @@ export default function EducationPortal({ tutorials, quizQuestions, activeLangua
           <div className="space-y-4">
             
             {!quizStarted && !quizFinished && (
-              <div className="bg-[#050806] border border-white/5 p-5 rounded-2xl text-center space-y-4">
+               <div className="academy-card bg-[#050806] border border-white/5 p-5 rounded-2xl text-center space-y-4">
                 <HelpCircle className="text-indigo-400 mx-auto animate-pulse" size={32} />
                 <div className="space-y-1.5">
                   <h4 className="text-xs font-extrabold text-white">Dynamic Crop Knowledge check</h4>
@@ -345,7 +345,7 @@ export default function EducationPortal({ tutorials, quizQuestions, activeLangua
             )}
 
             {quizStarted && !quizFinished && (
-              <div className="bg-[#050806] border border-white/5 p-5 rounded-2xl space-y-4 relative overflow-hidden">
+               <div className="academy-card bg-[#050806] border border-white/5 p-5 rounded-2xl space-y-4 relative overflow-hidden">
                 {/* Cyber corner */}
                 <div className="absolute top-0 right-0 w-3 h-3 bg-indigo-500/20 rounded-bl-lg pointer-events-none" />
 
@@ -363,14 +363,14 @@ export default function EducationPortal({ tutorials, quizQuestions, activeLangua
                     const isSelected = selectedAnswer === option;
                     const isCorrect = option === activeQuestions[currentQuestionIndex].answer;
                     
-                    let btnClass = "bg-[#0a0f0c] border-white/5 hover:border-indigo-500/20 text-zinc-300";
+                     let btnClass = "academy-answer bg-[#0a0f0c] border-white/5 hover:border-indigo-500/20 text-zinc-300";
                     if (selectedAnswer) {
                       if (isCorrect) {
-                        btnClass = "bg-emerald-950/40 border-emerald-500/30 text-emerald-400 shadow-[0_0_12px_rgba(16,185,129,0.1)]";
+                         btnClass = "academy-answer bg-emerald-950/40 border-emerald-500/30 text-emerald-400 shadow-[0_0_12px_rgba(16,185,129,0.1)]";
                       } else if (isSelected) {
-                        btnClass = "bg-red-950/40 border-red-500/30 text-red-400";
+                         btnClass = "academy-answer bg-red-950/40 border-red-500/30 text-red-400";
                       } else {
-                        btnClass = "bg-[#070b09] border-white/5 text-zinc-600 opacity-50";
+                         btnClass = "academy-answer bg-[#070b09] border-white/5 text-zinc-600 opacity-50";
                       }
                     }
 
@@ -401,7 +401,7 @@ export default function EducationPortal({ tutorials, quizQuestions, activeLangua
                 {selectedAnswer && (
                   <button
                     onClick={handleNextQuestion}
-                    className="w-full bg-indigo-650 hover:bg-indigo-750 text-white font-bold py-2 rounded-xl text-xs font-mono transition-all cursor-pointer border border-indigo-500/30 text-center"
+                     className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2.5 rounded-xl text-sm font-mono transition-all cursor-pointer border border-indigo-500/30 text-center"
                   >
                     {currentQuestionIndex + 1 === activeQuestions.length ? t.finishBtn : t.nextBtn}
                   </button>
@@ -410,7 +410,7 @@ export default function EducationPortal({ tutorials, quizQuestions, activeLangua
             )}
 
             {quizFinished && (
-              <div className="bg-[#050806] border border-white/5 p-6 rounded-2xl text-center space-y-4">
+               <div className="academy-card bg-[#050806] border border-white/5 p-6 rounded-2xl text-center space-y-4">
                 <Award className="text-yellow-500 mx-auto animate-bounce" size={36} />
                 <div className="space-y-1">
                   <h4 className="text-xs font-extrabold text-white">{t.quizScore}</h4>

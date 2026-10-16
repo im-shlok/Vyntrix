@@ -140,6 +140,26 @@ export default function VisionAnalysis({ onAnalyzeComplete, activeLanguage }: Vi
   };
 
   const t = labels[activeLanguage] || labels["en"];
+  const visionText: Record<string, {
+    description: string;
+    invalidImage: string;
+    analysisFailed: string;
+    noLeaf: string;
+    clearPhoto: string;
+  }> = {
+    en: { description: "YOLOv8s Leaf Detection", invalidImage: "Please select a JPG, PNG, or WEBP image.", analysisFailed: "Vision analysis failed. Please try again.", noLeaf: "No leaf detected in this image.", clearPhoto: "Try a clear photo with the leaf fully visible." },
+    hi: { description: "YOLOv8s पत्ती पहचान", invalidImage: "कृपया JPG, PNG या WEBP छवि चुनें।", analysisFailed: "दृश्य विश्लेषण विफल हुआ। कृपया फिर से प्रयास करें।", noLeaf: "इस छवि में कोई पत्ती नहीं मिली।", clearPhoto: "पत्ती पूरी तरह दिखाई देने वाली स्पष्ट फोटो लें।" },
+    pa: { description: "YOLOv8s ਪੱਤਾ ਪਛਾਣ", invalidImage: "ਕਿਰਪਾ ਕਰਕੇ JPG, PNG ਜਾਂ WEBP ਤਸਵੀਰ ਚੁਣੋ।", analysisFailed: "ਦ੍ਰਿਸ਼ਟੀ ਵਿਸ਼ਲੇਸ਼ਣ ਅਸਫਲ ਹੋਇਆ। ਦੁਬਾਰਾ ਕੋਸ਼ਿਸ਼ ਕਰੋ।", noLeaf: "ਇਸ ਤਸਵੀਰ ਵਿੱਚ ਕੋਈ ਪੱਤਾ ਨਹੀਂ ਮਿਲਿਆ।", clearPhoto: "ਪੱਤੇ ਦੀ ਪੂਰੀ ਤਰ੍ਹਾਂ ਸਾਫ਼ ਤਸਵੀਰ ਲਓ।" },
+    mr: { description: "YOLOv8s पान ओळख", invalidImage: "कृपया JPG, PNG किंवा WEBP प्रतिमा निवडा.", analysisFailed: "दृश्य विश्लेषण अयशस्वी झाले. पुन्हा प्रयत्न करा.", noLeaf: "या प्रतिमेत कोणतेही पान आढळले नाही.", clearPhoto: "पान पूर्णपणे दिसणारा स्पष्ट फोटो घ्या." },
+    te: { description: "YOLOv8s ఆకు గుర్తింపు", invalidImage: "దయచేసి JPG, PNG లేదా WEBP చిత్రాన్ని ఎంచుకోండి.", analysisFailed: "దృశ్య విశ్లేషణ విఫలమైంది. మళ్లీ ప్రయత్నించండి.", noLeaf: "ఈ చిత్రంలో ఆకు కనిపించలేదు.", clearPhoto: "ఆకు పూర్తిగా కనిపించే స్పష్టమైన ఫోటోను ప్రయత్నించండి." },
+    ta: { description: "YOLOv8s இலை கண்டறிதல்", invalidImage: "JPG, PNG அல்லது WEBP படத்தைத் தேர்ந்தெடுக்கவும்.", analysisFailed: "காட்சி பகுப்பாய்வு தோல்வியடைந்தது. மீண்டும் முயற்சிக்கவும்.", noLeaf: "இந்தப் படத்தில் இலை எதுவும் கண்டறியப்படவில்லை.", clearPhoto: "இலை முழுமையாகத் தெரியும் தெளிவான புகைப்படத்தை முயற்சிக்கவும்." },
+    kn: { description: "YOLOv8s ಎಲೆ ಪತ್ತೆ", invalidImage: "ದಯವಿಟ್ಟು JPG, PNG ಅಥವಾ WEBP ಚಿತ್ರವನ್ನು ಆಯ್ಕೆಮಾಡಿ.", analysisFailed: "ದೃಶ್ಯ ವಿಶ್ಲೇಷಣೆ ವಿಫಲವಾಗಿದೆ. ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ.", noLeaf: "ಈ ಚಿತ್ರದಲ್ಲಿ ಯಾವುದೇ ಎಲೆ ಕಂಡುಬಂದಿಲ್ಲ.", clearPhoto: "ಎಲೆ ಸಂಪೂರ್ಣವಾಗಿ ಕಾಣುವ ಸ್ಪಷ್ಟ ಚಿತ್ರವನ್ನು ಪ್ರಯತ್ನಿಸಿ." },
+    gu: { description: "YOLOv8s પર્ણ ઓળખ", invalidImage: "કૃપા કરીને JPG, PNG અથવા WEBP છબી પસંદ કરો.", analysisFailed: "વિઝન વિશ્લેષણ નિષ્ફળ ગયું. ફરી પ્રયાસ કરો.", noLeaf: "આ છબીમાં કોઈ પાન મળ્યું નથી.", clearPhoto: "પાન સંપૂર્ણ દેખાય તેવી સ્પષ્ટ છબી અજમાવો." },
+    bn: { description: "YOLOv8s পাতা শনাক্তকরণ", invalidImage: "দয়া করে JPG, PNG বা WEBP ছবি নির্বাচন করুন।", analysisFailed: "দৃশ্য বিশ্লেষণ ব্যর্থ হয়েছে। আবার চেষ্টা করুন।", noLeaf: "এই ছবিতে কোনো পাতা শনাক্ত হয়নি।", clearPhoto: "পাতাটি সম্পূর্ণ দেখা যায় এমন পরিষ্কার ছবি তুলুন।" },
+    ml: { description: "YOLOv8s ഇല കണ്ടെത്തൽ", invalidImage: "JPG, PNG അല്ലെങ്കിൽ WEBP ചിത്രം തിരഞ്ഞെടുക്കുക.", analysisFailed: "വിഷൻ വിശകലനം പരാജയപ്പെട്ടു. വീണ്ടും ശ്രമിക്കുക.", noLeaf: "ഈ ചിത്രത്തിൽ ഇലയൊന്നും കണ്ടെത്തിയില്ല.", clearPhoto: "ഇല പൂർണ്ണമായി കാണുന്ന വ്യക്തമായ ചിത്രം ഉപയോഗിക്കുക." },
+    or: { description: "YOLOv8s ପତ୍ର ଚିହ୍ନଟ", invalidImage: "ଦୟାକରି JPG, PNG କିମ୍ବା WEBP ଚିତ୍ର ବାଛନ୍ତୁ।", analysisFailed: "ଭିଜନ୍ ବିଶ୍ଳେଷଣ ବିଫଳ ହେଲା। ପୁଣି ଚେଷ୍ଟା କରନ୍ତୁ।", noLeaf: "ଏହି ଚିତ୍ରରେ କୌଣସି ପତ୍ର ମିଳିଲା ନାହିଁ।", clearPhoto: "ପତ୍ରଟି ସମ୍ପୂର୍ଣ୍ଣ ଦେଖାଯାଉଥିବା ସ୍ପଷ୍ଟ ଫଟୋ ନିଅନ୍ତୁ।" }
+  };
+  const vt = visionText[activeLanguage] || visionText.en;
   const displayedDetections = analysisResult?.detections
     ? Object.values(
         analysisResult.detections.reduce((grouped: Record<string, any>, detection: any) => {
@@ -180,7 +200,7 @@ export default function VisionAnalysis({ onAnalyzeComplete, activeLanguage }: Vi
 
   const processImage = async (file: File) => {
     if (!file.type.startsWith("image/")) {
-      setAnalysisError("Please select a JPG, PNG, or WEBP image.");
+      setAnalysisError(vt.invalidImage);
       return;
     }
 
@@ -201,8 +221,8 @@ export default function VisionAnalysis({ onAnalyzeComplete, activeLanguage }: Vi
       });
 
       if (!res.ok) {
-        const errorData = await res.json().catch(() => null);
-        throw new Error(errorData?.detail || "Vision analysis failed.");
+        await res.json().catch(() => null);
+        throw new Error(vt.analysisFailed);
       }
       
       const data = await res.json();
@@ -229,7 +249,7 @@ export default function VisionAnalysis({ onAnalyzeComplete, activeLanguage }: Vi
 
     } catch (err) {
       setIsAnalyzing(false);
-      setAnalysisError(err instanceof Error ? err.message : "Vision analysis failed.");
+      setAnalysisError(vt.analysisFailed);
     }
   };
 
@@ -250,7 +270,7 @@ export default function VisionAnalysis({ onAnalyzeComplete, activeLanguage }: Vi
           <Camera className="text-fuchsia-500 animate-pulse" size={20} />
           {t.title}
         </h2>
-        <p className="text-xs text-fuchsia-400/80 mt-1">{t.description}</p>
+        <p className="text-xs text-fuchsia-400/80 mt-1">        {vt.description}</p>
       </div>
 
       <div className="flex-1 flex flex-col justify-center min-h-0">
@@ -356,8 +376,8 @@ export default function VisionAnalysis({ onAnalyzeComplete, activeLanguage }: Vi
         {selectedImage && !isAnalyzing && displayedDetections.length === 0 && (
           <div className="w-full min-h-[280px] flex flex-col items-center justify-center rounded-2xl border border-amber-500/20 bg-amber-950/10 p-8 text-center">
             <AlertTriangle className="text-amber-400 mb-3" size={24} />
-            <p className="text-sm font-bold text-amber-300">No leaf detected in this image.</p>
-            <p className="text-[10px] text-zinc-500 mt-2">Try a clear photo with the leaf fully visible.</p>
+            <p className="text-sm font-bold text-amber-300">{vt.noLeaf}</p>
+            <p className="text-[10px] text-zinc-500 mt-2">{vt.clearPhoto}</p>
           </div>
         )}
 

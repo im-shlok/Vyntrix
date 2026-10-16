@@ -1,78 +1,511 @@
 @import "tailwindcss";
 
 @layer base {
-  :root {
-    --background: 140 30% 3%;
-    --foreground: 0 0% 100%;
-    --card: 140 25% 6%;
-    --card-foreground: 140 10% 90%;
-    --primary: 142 86% 46%;
-    --primary-foreground: 0 0% 0%;
-    --secondary: 140 20% 10%;
-    --secondary-foreground: 140 10% 90%;
-    --muted: 140 10% 8%;
-    --muted-foreground: 140 10% 60%;
-    --accent: 142 86% 46%;
-    --accent-foreground: 0 0% 0%;
-    --destructive: 0 84.2% 60.2%;
+:root {
+    --background: 84 30% 96%;
+    --foreground: 153 34% 17%;
+    --card: 0 0% 100%;
+    --card-foreground: 153 34% 17%;
+    --primary: 148 55% 31%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 84 28% 91%;
+    --secondary-foreground: 153 34% 17%;
+    --muted: 84 18% 90%;
+    --muted-foreground: 154 15% 38%;
+    --accent: 38 88% 48%;
+    --accent-foreground: 30 40% 12%;
+    --destructive: 0 72% 48%;
     --destructive-foreground: 0 0% 100%;
-    --border: 140 15% 12%;
-    --input: 140 15% 12%;
-    --ring: 142 86% 46%;
+    --border: 144 18% 80%;
+    --input: 144 18% 80%;
+    --ring: 148 55% 31%;
     --radius: 1rem;
   }
 }
 
 body {
-  background-color: #050806;
-  background-image: 
-    linear-gradient(to right, rgba(255, 255, 255, 0.04) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(255, 255, 255, 0.04) 1px, transparent 1px);
-  background-size: 44px 44px;
+  background-color: #f4f7ef;
+  background-image: radial-gradient(circle at 15% 0%, rgba(116, 168, 110, 0.13), transparent 28%),
+    radial-gradient(circle at 90% 10%, rgba(231, 180, 78, 0.12), transparent 22%);
   min-height: 100vh;
-  color: #e6f4ea;
+  color: #18382b;
   font-family: 'Outfit', sans-serif;
   overflow-x: hidden;
 }
 
-/* Obsidian Glassmorphism Panels */
+.landing-shell {
+  min-height: 100vh;
+  background: radial-gradient(circle at 12% 12%, rgba(41, 111, 69, 0.38), transparent 32%),
+    radial-gradient(circle at 88% 20%, rgba(29, 78, 55, 0.42), transparent 28%),
+    linear-gradient(135deg, #0b1f15 0%, #102d1f 48%, #08150e 100%);
+  color: #f3fbf4;
+}
+
+/* Profile editor uses the same calm, high-contrast farm surface as the dashboard. */
+.profile-page {
+  background: #f4f7ef !important;
+  color: #18382b;
+}
+
+.profile-page > div {
+  max-width: 64rem;
+}
+
+.profile-header {
+  border-color: #d2e3d5 !important;
+}
+
+.profile-icon-button {
+  border-color: #c9dfcf !important;
+  color: #4d715b;
+  background: #ffffff;
+}
+
+.profile-icon-button:hover {
+  border-color: #4cae72 !important;
+  color: #176b43;
+  background: #e5f6e9;
+}
+
+.profile-kicker,
+.profile-accent {
+  color: #1d8a52;
+}
+
+.profile-title,
+.profile-section-title {
+  color: #17382b;
+}
+
+.profile-status {
+  color: #217848;
+  background: #dff4e5;
+  border: 1px solid #9fd3ad;
+}
+
+.profile-section {
+  background: #ffffff;
+  border: 1px solid #d3e4d6;
+  box-shadow: 0 10px 28px rgba(43, 86, 53, 0.08);
+}
+
+.profile-telemetry-section {
+  background: linear-gradient(145deg, #f0fbfb 0%, #ffffff 62%, #eef8f7 100%);
+  border-color: #c9e6e3;
+}
+
+.profile-section-header {
+  border-color: #dce9de !important;
+}
+
+.profile-muted,
+.profile-label {
+  color: #5d7565;
+}
+
+.profile-cyan-accent {
+  color: #008ca0;
+}
+
+.profile-input {
+  background: #fbfefb !important;
+  color: #18382b !important;
+  border-color: #cfe0d2 !important;
+}
+
+.profile-input::placeholder {
+  color: #7b9181;
+}
+
+.profile-input:focus {
+  border-color: #46ae72 !important;
+  box-shadow: 0 0 0 3px rgba(70, 174, 114, 0.14);
+}
+
+.profile-page select {
+  color-scheme: light;
+}
+
+.profile-page select option {
+  background: #ffffff !important;
+  color: #18382b !important;
+}
+
+.profile-cancel {
+  color: #4e6c59;
+  border-color: #c8ddcc;
+  background: #ffffff;
+}
+
+.profile-cancel:hover {
+  color: #17382b;
+  border-color: #7abb8e;
+  background: #e9f6eb;
+}
+
+.profile-save {
+  color: #ffffff;
+  background: #248a50;
+  box-shadow: 0 7px 16px rgba(36, 138, 80, 0.2);
+}
+
+.profile-save:hover {
+  background: #1d7543;
+}
+
+.profile-page [class~="text-emerald-300"] {
+  color: #176b43 !important;
+}
+
+.profile-page [class~="text-red-300"] {
+  color: #a33f36 !important;
+}
+
+/* Shared dark glass panels keep the marketing and auth surfaces readable. */
 .glass-panel {
-  background: rgba(10, 16, 12, 0.75);
-  backdrop-filter: blur(20px) saturate(140%);
-  -webkit-backdrop-filter: blur(20px) saturate(140%);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 1.25rem;
-  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
+  background: rgba(13, 31, 22, 0.94);
+  backdrop-filter: blur(16px) saturate(110%);
+  -webkit-backdrop-filter: blur(16px) saturate(110%);
+  border: 1px solid rgba(171, 224, 181, 0.16);
+  border-radius: 1rem;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.22);
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .glass-panel:hover {
-  border-color: rgba(16, 185, 129, 0.28);
-  box-shadow: 0 8px 32px 0 rgba(16, 185, 129, 0.08);
+  border-color: rgba(84, 211, 132, 0.45);
+  box-shadow: 0 12px 28px rgba(16, 185, 129, 0.12);
 }
 
 .glass-panel-dark {
-  background: rgba(4, 6, 5, 0.95);
-  backdrop-filter: blur(24px);
-  -webkit-backdrop-filter: blur(24px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 1.25rem;
-  box-shadow: 0 12px 40px 0 rgba(0, 0, 0, 0.8);
+  background: #17382b;
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 1rem;
+  box-shadow: 0 12px 32px rgba(20, 56, 40, 0.2);
 }
 
 .glass-card {
-  background: rgba(20, 28, 23, 0.45);
+  background: rgba(20, 43, 30, 0.92);
   backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(171, 224, 181, 0.12);
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .glass-card:hover {
   transform: translateY(-4px) scale(1.01);
-  background: rgba(20, 32, 25, 0.65);
-  box-shadow: 0 12px 40px 0 rgba(16, 185, 129, 0.12);
-  border-color: rgba(16, 185, 129, 0.3);
+  background: rgba(25, 56, 38, 0.98);
+  box-shadow: 0 12px 30px rgba(16, 185, 129, 0.12);
+  border-color: rgba(84, 211, 132, 0.35);
 }
+
+.preloader-shell {
+  background:
+    radial-gradient(circle at 18% 18%, rgba(32, 211, 190, 0.14), transparent 28%),
+    radial-gradient(circle at 84% 22%, rgba(250, 204, 21, 0.1), transparent 22%),
+    linear-gradient(135deg, #061612 0%, #071f1c 48%, #080f20 100%) !important;
+}
+
+.preloader-card {
+  background: linear-gradient(135deg, rgba(16, 67, 58, 0.98) 0%, rgba(17, 52, 62, 0.98) 55%, rgba(28, 34, 72, 0.98) 100%) !important;
+  color: #ffffff;
+  border-color: rgba(126, 241, 222, 0.42) !important;
+  box-shadow: 0 20px 70px rgba(0, 0, 0, 0.38), 0 0 45px rgba(45, 212, 191, 0.16);
+}
+
+.preloader-card .text-white {
+  color: #ffffff !important;
+}
+
+/* Farmer-first dashboard surface: calmer colors, larger type, and clear focus states. */
+.farmer-dashboard {
+  color: #18382b;
+  background: #f4f7ef;
+}
+
+.farmer-dashboard button,
+.farmer-dashboard a,
+.farmer-dashboard select {
+  -webkit-tap-highlight-color: transparent;
+}
+
+.farmer-dashboard button:focus-visible,
+.farmer-dashboard a:focus-visible,
+.farmer-dashboard select:focus-visible {
+  outline: 3px solid rgba(226, 164, 49, 0.75);
+  outline-offset: 3px;
+}
+
+.farmer-dashboard .farmer-panel {
+  background: rgba(255, 255, 255, 0.96);
+  border: 1px solid rgba(41, 99, 67, 0.15);
+  box-shadow: 0 8px 24px rgba(32, 79, 51, 0.08);
+}
+
+/* Calm, high-contrast navigation: the sidebar belongs to the same light farm surface. */
+.farmer-dashboard aside.farmer-panel {
+  background: #e6f2e9 !important;
+  color: #1a4b35;
+  border-color: #c4dfcb !important;
+  box-shadow: 0 12px 28px rgba(50, 102, 67, 0.1);
+}
+
+.farmer-dashboard aside.farmer-panel .text-white {
+  color: #17382b !important;
+}
+
+.farmer-dashboard aside.farmer-panel .text-zinc-400,
+.farmer-dashboard aside.farmer-panel .text-zinc-500 {
+  color: #4b6b58 !important;
+}
+
+.farmer-dashboard aside.farmer-panel .text-zinc-650 {
+  color: #6d8977 !important;
+}
+
+.farmer-dashboard aside.farmer-panel [class*="border-white"] {
+  border-color: rgba(48, 112, 69, 0.16) !important;
+}
+
+.farmer-dashboard aside.farmer-panel button,
+.farmer-dashboard aside.farmer-panel a {
+  min-height: 44px;
+  font-size: 0.875rem;
+}
+
+.farmer-dashboard aside.farmer-panel button:hover,
+.farmer-dashboard aside.farmer-panel a:hover {
+  color: #164b31 !important;
+  background: rgba(255, 255, 255, 0.72) !important;
+}
+
+.farmer-dashboard aside.farmer-panel button[class*="bg-emerald-500/10"] {
+  color: #176b43 !important;
+  background: #c8efda !important;
+  border-color: #6bc18d !important;
+  box-shadow: 0 8px 20px rgba(33, 156, 84, 0.1);
+}
+
+.farmer-dashboard aside.farmer-panel button[class*="bg-fuchsia-500/10"] {
+  color: #8f3d68 !important;
+  background: #f9e4ef !important;
+  border-color: #e7a8c6 !important;
+}
+
+.farmer-dashboard aside.farmer-panel button[class*="bg-yellow-500/10"] {
+  color: #8b6100 !important;
+  background: #fff1c9 !important;
+  border-color: #e8c66e !important;
+}
+
+.farmer-dashboard aside.farmer-panel button[class*="bg-red-500/10"] {
+  color: #a33f36 !important;
+  background: #ffe5e1 !important;
+  border-color: #efaaa1 !important;
+}
+
+.farmer-dashboard aside.farmer-panel select {
+  color: #17382b !important;
+  background: transparent !important;
+}
+
+/* Native language menus inherit the browser's dark option surface on some
+   mobile/Windows browsers. Force a high-contrast option list. */
+.farmer-dashboard select {
+  color-scheme: light;
+}
+
+.farmer-dashboard select option {
+  background-color: #ffffff !important;
+  color: #17382b !important;
+}
+
+.farmer-dashboard .scheme-card {
+  background: #f7fbf7 !important;
+  color: #234c35 !important;
+  border: 1px solid #cfe4d3 !important;
+  box-shadow: 0 5px 14px rgba(37, 91, 51, 0.06);
+}
+
+.farmer-dashboard .scheme-card .text-white {
+  color: #184f31 !important;
+}
+
+.farmer-dashboard .scheme-card .text-zinc-400 {
+  color: #567163 !important;
+}
+
+.farmer-dashboard .scheme-card .text-emerald-450 {
+  color: #207a49 !important;
+}
+
+.farmer-dashboard .glass-panel,
+.farmer-dashboard .glass-card {
+  background: rgba(255, 255, 255, 0.96);
+  border-color: rgba(41, 99, 67, 0.15);
+  box-shadow: 0 8px 24px rgba(32, 79, 51, 0.08);
+}
+
+.farmer-dashboard .crisis-panel {
+  background: linear-gradient(145deg, #fff8f6 0%, #ffffff 58%, #fff1ee 100%) !important;
+  border-color: #f2c9c2 !important;
+  box-shadow: 0 12px 28px rgba(164, 63, 52, 0.09);
+}
+
+.farmer-dashboard .academy-panel {
+  background: linear-gradient(145deg, #f7f8ff 0%, #ffffff 58%, #f0f3ff 100%) !important;
+  border-color: #d5dcf4 !important;
+  box-shadow: 0 12px 28px rgba(62, 75, 143, 0.09);
+}
+
+.farmer-dashboard .crisis-card,
+.farmer-dashboard .academy-card {
+  background: #ffffff !important;
+  color: #213d30 !important;
+  border-color: #e0e9e2 !important;
+  box-shadow: 0 6px 18px rgba(29, 63, 42, 0.06);
+}
+
+.farmer-dashboard .crisis-card {
+  border-left: 4px solid #e16459 !important;
+}
+
+.farmer-dashboard .academy-card {
+  border-left: 4px solid #7184d6 !important;
+}
+
+.farmer-dashboard .crisis-tabs,
+.farmer-dashboard .academy-tabs {
+  background: #eef2ee !important;
+  border-color: #dbe6dd !important;
+  color: #486052 !important;
+}
+
+.farmer-dashboard .crisis-tabs button:not(.bg-red-600),
+.farmer-dashboard .academy-tabs button:not(.bg-indigo-600) {
+  color: #587062 !important;
+}
+
+.farmer-dashboard .crisis-input {
+  background: #ffffff !important;
+  color: #18382b !important;
+  border-color: #d2e0d5 !important;
+}
+
+.farmer-dashboard .crisis-note {
+  background: #fff1ee !important;
+  border-color: #f1c8c1 !important;
+  color: #8f3f36 !important;
+}
+
+.farmer-dashboard .crisis-card [class~="text-red-200/90"] {
+  color: #5f302c !important;
+}
+
+.farmer-dashboard .academy-panel [class~="text-indigo-300/80"] {
+  color: #5869aa !important;
+}
+
+.farmer-dashboard .academy-answer {
+  background: #f8f9ff !important;
+  color: #263b66 !important;
+  border-color: #d8def4 !important;
+}
+
+.farmer-dashboard [class~="bg-black/90"],
+.farmer-dashboard [class~="bg-black/95"],
+.farmer-dashboard [class~="bg-black/40"],
+.farmer-dashboard [class~="bg-black/45"] {
+  background-color: rgba(255, 255, 255, 0.92) !important;
+}
+
+.farmer-dashboard header .text-white,
+.farmer-dashboard > aside .text-white,
+.farmer-dashboard footer .text-white,
+.farmer-dashboard main .text-white {
+  color: #17382b !important;
+}
+
+.farmer-dashboard main .text-zinc-300 { color: #2f4c3d !important; }
+.farmer-dashboard main .text-zinc-400 { color: #51685b !important; }
+.farmer-dashboard main .text-zinc-500 { color: #607568 !important; }
+.farmer-dashboard main .text-zinc-600 { color: #718379 !important; }
+
+/* Dark utility surfaces are intentionally used for terminal-like inputs and advice output.
+   Restore a readable light-on-dark pairing inside them instead of inheriting the light-card text. */
+.farmer-dashboard main [class~="bg-[#040605]"],
+.farmer-dashboard main [class~="bg-[#050806]"],
+.farmer-dashboard main [class~="bg-[#0a0f0c]"],
+.farmer-dashboard main [class~="bg-black/60"],
+.farmer-dashboard main [class~="bg-[#080e0a]/60"],
+.farmer-dashboard main [class~="bg-[#080d0e]/60"],
+.farmer-dashboard main [class~="bg-[#0c080e]/60"],
+.farmer-dashboard main [class~="bg-[#0d0d08]/60"],
+.farmer-dashboard main [class~="bg-[#030504]/90"] {
+  background: #10251a !important;
+  color: #e8f5eb !important;
+  border-color: rgba(151, 211, 164, 0.22) !important;
+}
+
+.farmer-dashboard main [class~="bg-[#040605]"] .text-white,
+.farmer-dashboard main [class~="bg-[#050806]"] .text-white,
+.farmer-dashboard main [class~="bg-[#0a0f0c]"] .text-white,
+.farmer-dashboard main [class~="bg-black/60"] .text-white,
+.farmer-dashboard main [class~="bg-[#080e0a]/60"] .text-white,
+.farmer-dashboard main [class~="bg-[#080d0e]/60"] .text-white,
+.farmer-dashboard main [class~="bg-[#0c080e]/60"] .text-white,
+.farmer-dashboard main [class~="bg-[#0d0d08]/60"] .text-white,
+.farmer-dashboard main [class~="bg-[#030504]/90"] .text-white {
+  color: #f7fff8 !important;
+}
+
+.farmer-dashboard main [class~="bg-[#040605]"] .text-zinc-300,
+.farmer-dashboard main [class~="bg-[#040605]"] .text-zinc-400,
+.farmer-dashboard main [class~="bg-[#050806]"] .text-zinc-300,
+.farmer-dashboard main [class~="bg-[#050806]"] .text-zinc-400,
+.farmer-dashboard main [class~="bg-[#0a0f0c]"] .text-zinc-300,
+.farmer-dashboard main [class~="bg-[#0a0f0c]"] .text-zinc-400,
+.farmer-dashboard main [class~="bg-black/60"] .text-zinc-300,
+.farmer-dashboard main [class~="bg-black/60"] .text-zinc-400,
+.farmer-dashboard main [class~="bg-[#080e0a]/60"] .text-zinc-300,
+.farmer-dashboard main [class~="bg-[#080e0a]/60"] .text-zinc-400,
+.farmer-dashboard main [class~="bg-[#080d0e]/60"] .text-zinc-300,
+.farmer-dashboard main [class~="bg-[#080d0e]/60"] .text-zinc-400,
+.farmer-dashboard main [class~="bg-[#0c080e]/60"] .text-zinc-300,
+.farmer-dashboard main [class~="bg-[#0c080e]/60"] .text-zinc-400,
+.farmer-dashboard main [class~="bg-[#0d0d08]/60"] .text-zinc-300,
+.farmer-dashboard main [class~="bg-[#0d0d08]/60"] .text-zinc-400,
+.farmer-dashboard main [class~="bg-[#030504]/90"] .text-zinc-300,
+.farmer-dashboard main [class~="bg-[#030504]/90"] .text-zinc-400 {
+  color: #c5dccb !important;
+}
+
+.farmer-dashboard main [class~="bg-[#040605]"] input,
+.farmer-dashboard main [class~="bg-[#040605]"] input::placeholder {
+  color: #d7eee0 !important;
+}
+
+.farmer-dashboard .farmer-heading {
+  color: #17382b;
+  letter-spacing: -0.02em;
+}
+
+/* The original UI uses a few custom Tailwind-like names. Keep them visible and consistent. */
+.text-emerald-450 { color: #18794c !important; }
+.text-fuchsia-450 { color: #a24873 !important; }
+.text-yellow-450 { color: #9a6900 !important; }
+.text-red-450 { color: #b83b32 !important; }
+.text-zinc-350 { color: #52675b !important; }
+.text-zinc-355 { color: #c1d1c5 !important; }
+.text-zinc-450 { color: #64766c !important; }
+.text-zinc-550 { color: #73867b !important; }
+.text-zinc-650 { color: #84958b !important; }
+.bg-emerald-955 { background-color: #eaf6ed !important; }
+.bg-fuchsia-955 { background-color: #f8edf3 !important; }
+.bg-cyan-955 { background-color: #e9f7f8 !important; }
+.bg-yellow-955 { background-color: #fff8df !important; }
+.bg-amber-955 { background-color: #fff5dc !important; }
 
 /* Neon Green Glowing indicators */
 .glow-green {
@@ -123,19 +556,67 @@ body {
 
 /* Custom Scrollbars */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 8px;
+  height: 8px;
 }
 
 ::-webkit-scrollbar-track {
-  background: rgba(0, 0, 0, 0.3);
+  background: rgba(39, 84, 54, 0.08);
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(16, 185, 129, 0.25);
+  background: rgba(42, 112, 69, 0.35);
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(16, 185, 129, 0.45);
+  background: rgba(42, 112, 69, 0.55);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Mobile dashboard layout: every overview column must stack instead of sharing a
+   row or leaking a sliver of the previous column underneath the active card. */
+@media (max-width: 767px) {
+  .farmer-dashboard,
+  .farmer-dashboard main,
+  .farmer-dashboard main > div,
+  .farmer-dashboard main .grid {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .farmer-dashboard main {
+    overflow-x: hidden;
+  }
+
+  .farmer-dashboard main .grid {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  .farmer-dashboard main .grid > *,
+  .farmer-dashboard main [class~="lg:col-span-4"],
+  .farmer-dashboard main [class~="lg:col-span-5"],
+  .farmer-dashboard main [class~="lg:col-span-7"],
+  .farmer-dashboard main [class~="lg:col-span-8"] {
+    grid-column: 1 / -1 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+  }
+
+  .farmer-dashboard main .glass-panel,
+  .farmer-dashboard main .glass-card,
+  .farmer-dashboard main .farmer-panel {
+    max-width: 100%;
+  }
 }

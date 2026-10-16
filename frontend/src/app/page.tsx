@@ -627,7 +627,7 @@ export default function LandingPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-transparent text-[#e6f4ea] relative overflow-hidden font-sans p-4 md:p-6 space-y-4 selection:bg-emerald-500 selection:text-white">
+    <div className="landing-shell text-[#e6f4ea] relative overflow-hidden font-sans p-4 md:p-6 space-y-4 selection:bg-emerald-500 selection:text-white">
       <Preloader />
 
       {/* Gridline background overlay */}

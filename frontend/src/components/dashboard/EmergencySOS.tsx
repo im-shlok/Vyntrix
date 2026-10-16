@@ -224,14 +224,14 @@ export default function EmergencySOS({ medicalAdvice, disasterAlerts, activeLang
   const activeDisasterAlert = disasterAlerts && disasterAlerts.alert_type && disasterAlerts.alert_type !== 'NONE';
 
   return (
-    <div className="glass-panel p-6 flex flex-col justify-between h-full bg-gradient-to-tr from-red-950/10 via-black/40 to-transparent border border-white/10 rounded-3xl shadow-inner relative overflow-hidden select-none text-left">
+    <div className="crisis-panel glass-panel p-6 flex flex-col justify-between h-full bg-gradient-to-tr from-red-950/10 via-black/40 to-transparent border border-white/10 rounded-3xl shadow-inner relative overflow-hidden select-none text-left">
       
       {/* Glow highlight */}
       <div className="absolute -top-10 -right-10 w-24 h-24 bg-red-500/5 rounded-full blur-2xl pointer-events-none" />
 
       <div>
         {/* Header section with SOS Button */}
-        <div className="flex justify-between items-start mb-4 border-b border-white/5 pb-3">
+        <div className="flex justify-between items-start mb-4 border-b border-red-100 pb-3">
           <div>
             <h2 className="text-md font-extrabold flex items-center gap-2 text-white">
               <AlertOctagon className="text-red-500 animate-pulse animate-blink-slow" size={18} />
@@ -241,7 +241,7 @@ export default function EmergencySOS({ medicalAdvice, disasterAlerts, activeLang
           </div>
           <button 
             onClick={handleSOSClick}
-            className="bg-red-650 hover:bg-red-750 text-white font-extrabold text-[10px] px-4 py-2 rounded-full shadow-[0_0_15px_rgba(220,38,38,0.5)] animate-pulse flex items-center gap-1.5 border border-red-500 font-mono cursor-pointer shrink-0 transition-transform hover:scale-105"
+             className="bg-red-600 hover:bg-red-700 text-white font-extrabold text-xs px-4 py-2.5 rounded-full shadow-[0_0_15px_rgba(220,38,38,0.22)] flex items-center gap-1.5 border border-red-500 font-mono cursor-pointer shrink-0 transition-transform hover:scale-105"
           >
             <Ambulance size={13} />
             {t.sosBtn}
@@ -262,7 +262,7 @@ export default function EmergencySOS({ medicalAdvice, disasterAlerts, activeLang
         )}
 
         {/* Tab Selector */}
-        <div className="flex bg-[#040605] p-1 rounded-xl border border-white/5 mb-4 text-xs font-bold text-red-450 font-mono">
+         <div className="crisis-tabs flex bg-[#040605] p-1 rounded-xl border border-white/5 mb-4 text-xs font-bold text-red-450 font-mono">
           <button 
             onClick={() => setActiveTab("medical")}
             className={`flex-1 py-2 rounded-lg transition-all cursor-pointer ${activeTab === 'medical' ? 'bg-red-600 text-white shadow-sm' : 'hover:bg-red-955/20 text-zinc-400'}`}
@@ -283,7 +283,7 @@ export default function EmergencySOS({ medicalAdvice, disasterAlerts, activeLang
             
             {/* If agent returned custom medical advice, render it. Otherwise show default guides */}
             {medicalAdvice ? (
-              <div className="bg-[#050806] border border-white/5 p-4 rounded-2xl font-mono relative overflow-hidden">
+              <div className="crisis-card bg-[#050806] border border-white/5 p-4 rounded-2xl font-mono relative overflow-hidden">
                 <div className="absolute left-0 top-0 bottom-0 w-[3px] bg-red-500/50" />
                 <h4 className="text-xs font-extrabold text-red-400 mb-2 flex items-center gap-1.5 uppercase tracking-wide">
                   <Heart size={13} className="text-red-500 animate-pulse" />
@@ -297,7 +297,7 @@ export default function EmergencySOS({ medicalAdvice, disasterAlerts, activeLang
               </div>
             ) : (
               <>
-                <div className="bg-[#050806] border border-white/5 p-4 rounded-2xl font-mono relative overflow-hidden">
+                <div className="crisis-card bg-[#050806] border border-white/5 p-4 rounded-2xl font-mono relative overflow-hidden">
                   <div className="absolute left-0 top-0 bottom-0 w-[3px] bg-red-500/50" />
                   <h4 className="text-xs font-extrabold text-red-400 mb-2 flex items-center gap-1.5 uppercase tracking-wide">
                     <Heart size={13} className="text-red-500 animate-pulse" />
@@ -310,7 +310,7 @@ export default function EmergencySOS({ medicalAdvice, disasterAlerts, activeLang
                   </ul>
                 </div>
 
-                <div className="bg-[#050806] border border-white/5 p-4 rounded-2xl font-mono relative overflow-hidden">
+                <div className="crisis-card bg-[#050806] border border-white/5 p-4 rounded-2xl font-mono relative overflow-hidden">
                   <div className="absolute left-0 top-0 bottom-0 w-[3px] bg-red-500/50" />
                   <h4 className="text-xs font-extrabold text-red-400 mb-2 flex items-center gap-1.5 uppercase tracking-wide">
                     <Syringe size={13} className="text-red-500 animate-pulse" />
@@ -337,7 +337,7 @@ export default function EmergencySOS({ medicalAdvice, disasterAlerts, activeLang
                     contact: medicalAdvice.emergency_contact || "108"
                   })) : HOSPITALS
                 ).map((h: any, i: number) => (
-                  <div key={i} className="flex justify-between items-center bg-[#050806] p-3 rounded-2xl border border-white/5 text-xs">
+                   <div key={i} className="crisis-card flex justify-between items-center bg-[#050806] p-3 rounded-2xl border border-white/5 text-xs">
                     <div>
                       <span className="font-bold text-white block leading-tight">{h.name}</span>
                       <span className="text-[9px] text-red-400 font-semibold mt-0.5 block">{h.status} • {h.distance}</span>
@@ -361,7 +361,7 @@ export default function EmergencySOS({ medicalAdvice, disasterAlerts, activeLang
         {activeTab === "damage" && (
           <div className="space-y-4">
             
-            <div className="bg-[#050806] border border-white/5 p-4 rounded-2xl space-y-4">
+             <div className="crisis-card bg-[#050806] border border-white/5 p-4 rounded-2xl space-y-4">
               <h4 className="text-xs font-bold text-white flex items-center gap-1.5 border-b border-white/5 pb-2 font-mono">
                 <Calculator size={13} className="text-red-500" />
                 {t.calcTitle}
@@ -382,7 +382,7 @@ export default function EmergencySOS({ medicalAdvice, disasterAlerts, activeLang
                     type="number" 
                     value={submergedAcreage} 
                     onChange={(e) => setSubmergedAcreage(parseFloat(e.target.value) || 1)}
-                    className="w-full bg-black border border-white/10 rounded-xl px-2.5 py-1.5 text-white outline-none font-bold font-mono focus:border-red-500 text-xs"
+                    className="crisis-input w-full bg-black border border-white/10 rounded-xl px-2.5 py-2 text-white outline-none font-bold font-mono focus:border-red-500 text-sm"
                   />
                 </div>
                 <div>
@@ -391,7 +391,7 @@ export default function EmergencySOS({ medicalAdvice, disasterAlerts, activeLang
                     type="number" 
                     value={submergedDays} 
                     onChange={(e) => setSubmergedDays(parseFloat(e.target.value) || 1)}
-                    className="w-full bg-black border border-white/10 rounded-xl px-2.5 py-1.5 text-white outline-none font-bold font-mono focus:border-red-500 text-xs"
+                    className="crisis-input w-full bg-black border border-white/10 rounded-xl px-2.5 py-2 text-white outline-none font-bold font-mono focus:border-red-500 text-sm"
                   />
                 </div>
               </div>
@@ -401,7 +401,7 @@ export default function EmergencySOS({ medicalAdvice, disasterAlerts, activeLang
                 <select 
                   value={cropType} 
                   onChange={(e) => setCropType(e.target.value)}
-                  className="w-full bg-black border border-white/10 rounded-xl px-2.5 py-1.5 text-xs text-white outline-none font-bold font-mono focus:border-red-500 cursor-pointer"
+                   className="crisis-input w-full bg-black border border-white/10 rounded-xl px-2.5 py-2 text-sm text-white outline-none font-bold font-mono focus:border-red-500 cursor-pointer"
                 >
                   <option value="Tomato" className="bg-[#050806] text-white font-mono">Tomato (Highly Vulnerable)</option>
                   <option value="Rice" className="bg-[#050806] text-white font-mono">Rice (Dhan - Flood Tolerant)</option>
@@ -411,7 +411,7 @@ export default function EmergencySOS({ medicalAdvice, disasterAlerts, activeLang
 
               <button 
                 onClick={calculateDamage}
-                className="w-full bg-red-650 hover:bg-red-750 text-white font-bold py-2 rounded-xl text-xs transition-colors border border-red-500 font-mono cursor-pointer"
+                 className="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-2.5 rounded-xl text-sm transition-colors border border-red-500 font-mono cursor-pointer"
               >
                 {t.calculate}
               </button>
@@ -435,7 +435,7 @@ export default function EmergencySOS({ medicalAdvice, disasterAlerts, activeLang
       </div>
 
       {/* Static emergency advisory detail */}
-      <div className="mt-4 flex items-start gap-2 bg-[#040605] border border-white/5 p-3 rounded-2xl text-[9.5px] text-red-400 font-semibold leading-normal font-mono">
+       <div className="crisis-note mt-4 flex items-start gap-2 bg-[#040605] border border-white/5 p-3 rounded-2xl text-xs text-red-400 font-semibold leading-normal font-mono">
         <Info size={13} className="shrink-0 mt-0.5 text-red-500" />
         <span className="font-sans text-zinc-400">For flash floods or cyclone updates, tune in to All India Radio or call 1070 (Disaster Management Hotline).</span>
       </div>
