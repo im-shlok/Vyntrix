@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { Mic, MicOff, Volume2, Globe, Sparkles, RefreshCw, Key, ShieldCheck } from 'lucide-react';
+import { apiFetch, API_BASE_URL } from '@/lib/api';
 
 interface VoiceAssistantProps {
   onAgentTriggered: (data: any) => void;
@@ -19,8 +20,11 @@ export default function VoiceAssistant({ onAgentTriggered, activeLanguage, onLan
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const mediaStreamRef = useRef<MediaStream | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
   const recognitionRef = useRef<any>(null);
+  const isStartingRef = useRef(false);
+  const isUnmountedRef = useRef(false);
 
   const LANGUAGES = [
     { code: "en", label: "English" },
@@ -141,15 +145,98 @@ export default function VoiceAssistant({ onAgentTriggered, activeLanguage, onLan
   const t = localizations[activeLanguage] || localizations["en"];
 
   useEffect(() => {
-    if (!isRecording) {
-      setStatusText("Tap microphone to speak");
-    }
-  }, [activeLanguage, isRecording]);
+    return () => {
+      isUnmountedRef.current = true;
+      if (recognitionRef.current) {
+        recognitionRef.current.onend = null;
+        recognitionRef.current.onerror = null;
+        try { recognitionRef.current.stop(); } catch {}
+        recognitionRef.current = null;
+      }
+      if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+        try { mediaRecorderRef.current.stop(); } catch {}
+      }
+      mediaStreamRef.current?.getTracks().forEach((track) => track.stop());
+      mediaStreamRef.current = null;
+    };
+  }, []);
 
+  const speechLocale = (language: string) => ({
+    en: 'en-IN', hi: 'hi-IN', pa: 'pa-IN', mr: 'mr-IN', te: 'te-IN',
+    ta: 'ta-IN', kn: 'kn-IN', gu: 'gu-IN', bn: 'bn-IN', ml: 'ml-IN', or: 'or-IN'
+  }[language] || 'en-IN');
+
+  const startSpeechRecognition = () => {
+    const SpeechRecognition = typeof window !== 'undefined'
+      ? (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
+      : null;
+
+    if (!SpeechRecognition) return false;
+
+    const recognition = new SpeechRecognition();
+    recognition.continuous = false;
+    recognition.interimResults = false;
+    recognition.lang = speechLocale(activeLanguage);
+    recognitionRef.current = recognition;
+    setIsRecording(true);
+    setStatusText(t.listening);
+
+    recognition.onresult = (event: any) => {
+      const text = event.results?.[0]?.[0]?.transcript?.trim();
+      if (!text || isUnmountedRef.current) return;
+      isStartingRef.current = false;
+      setTranscription(text);
+      setStatusText(t.processing);
+      try { recognition.stop(); } catch {}
+      triggerAgentFlowWithText(text);
+    };
+
+    recognition.onerror = (event: any) => {
+      if (isUnmountedRef.current) return;
+      setIsRecording(false);
+      isStartingRef.current = false;
+      const message = event.error === 'not-allowed'
+        ? 'Microphone permission is blocked. Allow microphone access and try again.'
+        : event.error === 'no-speech'
+          ? 'No speech heard. Tap the microphone and speak clearly.'
+          : `Voice input failed (${event.error || 'unknown error'}). Try again.`;
+      setStatusText(message);
+      recognitionRef.current = null;
+    };
+
+    recognition.onend = () => {
+      isStartingRef.current = false;
+      if (!isUnmountedRef.current) setIsRecording(false);
+      if (recognitionRef.current === recognition) recognitionRef.current = null;
+    };
+
+    try {
+      recognition.start();
+      return true;
+    } catch {
+      recognitionRef.current = null;
+      setIsRecording(false);
+      isStartingRef.current = false;
+      setStatusText('Could not start the microphone. Check browser permission.');
+      return true;
+    }
+  };
 
   const startRecordingAudio = async () => {
+    if (!navigator.mediaDevices?.getUserMedia || typeof MediaRecorder === 'undefined') {
+      setStatusText('Voice input is not supported in this browser. Use the text box below.');
+      return;
+    }
+
     try {
+      setIsRecording(true);
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      if (isUnmountedRef.current || !isStartingRef.current) {
+        stream.getTracks().forEach(track => track.stop());
+        return;
+      }
+      isStartingRef.current = false;
+      mediaStreamRef.current = stream;
 
       // 1. Let the browser pick its preferred supported mimeType
       const options = MediaRecorder.isTypeSupported('audio/webm')
@@ -174,29 +261,26 @@ export default function VoiceAssistant({ onAgentTriggered, activeLanguage, onLan
         const audioBlob = new Blob(audioChunksRef.current, { type: recordedType });
 
         stream.getTracks().forEach(track => track.stop());
+        mediaStreamRef.current = null;
         setStatusText(t.processing);
 
         try {
           // Get farmer profile
-          const session = localStorage.getItem("kisaan_session");
-          if (!session) throw new Error("No session found");
-
-          const farmerProfile = localStorage.getItem(`kisaan_user_${session}`);
-          if (!farmerProfile) throw new Error("No farmer profile found");
+          const farmerProfile = await apiFetch<Record<string, unknown>>('/api/profile/me');
 
           // 3. Match file extension to the actual format (webm/mp4/wav)
           const fileExt = recordedType.includes('mp4') ? 'mp4' : 'webm';
 
-          const formData = new FormData();
-          formData.append("file", audioBlob, `recording.${fileExt}`);
-          formData.append("language", activeLanguage);
-          formData.append("farmer_profile", farmerProfile);
+           const formData = new FormData();
+           formData.append("file", audioBlob, `recording.${fileExt}`);
+           formData.append("language", activeLanguage);
+           formData.append("farmer_profile", JSON.stringify(farmerProfile));
 
-          const backendUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
-          const res = await fetch(`${backendUrl}/api/voice/process`, {
-            method: "POST",
-            body: formData
-          });
+           const res = await fetch(`${API_BASE_URL}/api/voice/process`, {
+             method: "POST",
+             body: formData,
+             credentials: 'include',
+           });
 
           if (!res.ok) throw new Error("Offline");
 
@@ -205,7 +289,7 @@ export default function VoiceAssistant({ onAgentTriggered, activeLanguage, onLan
           animateAgentPipeline(data.agents_routed || data.execution_plan || [], data);
 
         } catch (err) {
-          simulateSandboxVoice();
+          setStatusText(err instanceof Error ? err.message : 'Voice service unavailable. Use the text box below.');
         }
       };
 
@@ -215,26 +299,37 @@ export default function VoiceAssistant({ onAgentTriggered, activeLanguage, onLan
     } catch (err) {
       console.error("Microphone access failed", err);
       setIsRecording(false);
-      setStatusText("Mic Blocked. Starting Sandbox...");
-      simulateSandboxVoice();
+      setStatusText(err instanceof DOMException && err.name === 'NotAllowedError'
+        ? 'Microphone permission denied. Allow access and try again.'
+        : 'Could not access the microphone. Use the text box below.');
     }
   };
 
   const stopRecording = () => {
     setIsRecording(false);
+    isStartingRef.current = false;
     if (recognitionRef.current) {
+      recognitionRef.current.onend = null;
       recognitionRef.current.stop();
       recognitionRef.current = null;
     }
     if (mediaRecorderRef.current && mediaRecorderRef.current.state !== "inactive") {
       mediaRecorderRef.current.stop();
     }
+    mediaStreamRef.current?.getTracks().forEach((track) => track.stop());
+    mediaStreamRef.current = null;
   };
 
   const handleToggleRecord = () => {
     if (isRecording) {
       stopRecording();
-    } else {
+      return;
+    }
+    if (isStartingRef.current) return;
+    isStartingRef.current = true;
+    // Prefer browser speech recognition: it avoids fragile audio conversion and
+    // returns the spoken command immediately after the user gesture.
+    if (!startSpeechRecognition()) {
       startRecordingAudio();
     }
   };
@@ -256,7 +351,7 @@ export default function VoiceAssistant({ onAgentTriggered, activeLanguage, onLan
         setStatusText("Complete plan generated.");
         if (finalData.speech_url) {
           // Cache-bust so the browser doesn't replay the previous response
-          setAudioUrl(`http://localhost:8000${finalData.speech_url}?t=${Date.now()}`);
+          setAudioUrl(`${API_BASE_URL}${finalData.speech_url}?t=${Date.now()}`);
         }
       }
     }, 800);
@@ -276,21 +371,13 @@ Then, write a bulleted list of 3-5 immediate action items. Each bullet MUST star
 
 Keep the tone supportive, precise, and tech-aesthetic. Translate everything fully into the language requested.`;
 
-      const res = await fetch("http://localhost:8000/api/chatbot", {
+      const data = await apiFetch<{ answer: string }>('/api/chatbot', {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
+        json: {
           query: prompt,
           language: activeLanguage,
-        }),
+        },
       });
-
-
-      if (!res.ok) throw new Error("CHATBOT API Error");
-
-      const data = await res.json();
       const answer = data.answer;
 
       // Parse crop from user query
@@ -355,28 +442,20 @@ Keep the tone supportive, precise, and tech-aesthetic. Translate everything full
     setStatusText(t.processing);
 
     try {
-      const session = localStorage.getItem("kisaan_session");
-      if (!session) throw new Error("No session found");
-
-      const farmerProfile = localStorage.getItem(`kisaan_user_${session}`);
-      if (!farmerProfile) throw new Error("No farmer profile found");
-
-      const res = await fetch("http://localhost:8000/api/chat", {
+      const farmerProfile = await apiFetch<Record<string, unknown>>('/api/profile/me');
+      const data = await apiFetch<any>('/api/chat', {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
+        json: {
           query: text,
           language: activeLanguage,
-          profile: JSON.parse(farmerProfile),
+          profile: farmerProfile,
           need_audio: true
-        })
+        }
       });
 
-      if (!res.ok) throw new Error("Offline");
-      const data = await res.json();
       animateAgentPipeline(data.execution_plan || data.agents_routed || [], data);
     } catch (err) {
-      simulateAgentPipelineOffline(text);
+      setStatusText(err instanceof Error ? err.message : 'Could not reach the farming assistant. Try again.');
     }
   };
 

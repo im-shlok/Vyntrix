@@ -59,10 +59,16 @@ from app.core.seed_data import MANDI_PRICES
 load_dotenv()  # Load environment variables from .env file
 app = FastAPI(title="Agriva API", description="AI Operating System for Rural India backend")
 
-# Configure CORS
+# Configure CORS for the credentialed session cookie used by the frontend.
+# A wildcard origin cannot be combined with allow_credentials=True in browsers.
+configured_origins = os.getenv(
+    "CORS_ORIGINS",
+    "http://localhost:3000,http://127.0.0.1:3000,http://localhost:3001,http://127.0.0.1:3001",
+)
+cors_origins = [origin.strip().rstrip("/") for origin in configured_origins.split(",") if origin.strip()]
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=cors_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -734,10 +740,13 @@ def chatbot_endpoint(request: ChatRequest):
 @app.post("/api/chat")
 def chat_endpoint(
     request: ChatRequest,
-    current_user: Optional[User] = Depends(get_optional_user),
+    current_user: User = Depends(get_current_user),
+    db=Depends(get_db),
 ):
     """Executes the LangGraph Multi-Agent network."""
-    profile = request.profile or {}
+    # The browser may send UI context, but identity and farm details always
+    # come from the authenticated SQL profile. This prevents profile spoofing.
+    profile = _serialize_profile(_get_or_create_profile(db, current_user))
     allowed_profile_fields = {
         "farmer_name",
         "contact_number",
@@ -775,10 +784,9 @@ def chat_endpoint(
         })
 
     safe_profile = {key: value for key, value in profile.items() if key in allowed_profile_fields}
-    if current_user:
-        # This context marker is added only from the HttpOnly session. It is
-        # consumed by memory_agent and never exposed in the response profile.
-        safe_profile["_user_id"] = current_user.id
+    # This context marker is added only from the HttpOnly session. It is
+    # consumed by memory_agent and never exposed in the response profile.
+    safe_profile["_user_id"] = current_user.id
 
     is_telemetry_query = "telemetry status" in request.query.lower()
     cache_key = hashlib.sha256(json.dumps({
@@ -1013,12 +1021,26 @@ LOCALE_MAP = {
 async def process_voice(
     file: UploadFile = File(...),
     language: str = Form("en"),
-    farmer_profile: str = Form(None)
+    farmer_profile: str = Form(None),
+    current_user: User = Depends(get_current_user),
+    db=Depends(get_db),
 ):
     """Processes regional language audio recordings with format conversion."""
-    
-    raw_audio_path = os.path.join(VOICE_DIR, f"raw_{file.filename}")
-    converted_wav_path = os.path.join(VOICE_DIR, f"converted_{file.filename}.wav")
+
+    # Use server-generated names; never place a browser-supplied filename in a
+    # filesystem path. The submitted profile is ignored in favor of SQL data.
+    upload_id = uuid.uuid4().hex
+    source_formats = {
+        "audio/webm": "webm",
+        "audio/ogg": "ogg",
+        "audio/mp4": "mp4",
+        "audio/wav": "wav",
+        "audio/x-wav": "wav",
+        "audio/mpeg": "mp3",
+    }
+    source_format = source_formats.get((file.content_type or "").split(";")[0].lower(), "webm")
+    raw_audio_path = os.path.join(VOICE_DIR, f"raw_{upload_id}.{source_format}")
+    converted_wav_path = os.path.join(VOICE_DIR, f"converted_{upload_id}.wav")
     
     # 1. Save incoming raw browser audio file
     with open(raw_audio_path, "wb") as buffer:
@@ -1026,7 +1048,7 @@ async def process_voice(
         
     # 2. Convert incoming audio (WebM/OGG/etc.) to proper PCM WAV using pydub
     try:
-        sound = AudioSegment.from_file(raw_audio_path)
+        sound = AudioSegment.from_file(raw_audio_path, format=source_format)
         sound.export(converted_wav_path, format="wav")
     except Exception as e:
         print(f"Audio conversion failed: {e}")
@@ -1056,7 +1078,7 @@ async def process_voice(
     initial_state = AgentState(
         user_query=transcribed_text,
         language=language,
-        farmer_profile=json.loads(farmer_profile) or {}
+        farmer_profile={**_serialize_profile(_get_or_create_profile(db, current_user)), "_user_id": current_user.id}
     )
     final_state = compiled_graph.invoke(initial_state)
     

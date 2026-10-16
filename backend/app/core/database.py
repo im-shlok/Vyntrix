@@ -152,7 +152,7 @@ def init_db():
     # database predates authenticated profiles, so add only the new nullable
     # columns needed by that table. This keeps existing local installs usable
     # without requiring Alembic for this small application.
-    if "sqlite" in DATABASE_URL:
+    if "sqlite" in DATABASE_URL or "postgres" in DATABASE_URL:
         profile_columns = {
             column["name"] for column in inspect(engine).get_columns("farmer_profiles")
         }
@@ -172,9 +172,9 @@ def init_db():
                             f"{column_name} {column_type}"
                         )
                     )
-            # SQLite supports partial indexes, allowing the legacy unowned
-            # profile row(s) to remain NULL while enforcing one profile per
-            # authenticated user.
+            # Both SQLite and PostgreSQL support partial indexes, allowing the
+            # legacy unowned profile row(s) to remain NULL while enforcing one
+            # profile per authenticated user.
             connection.execute(
                 text(
                     "CREATE UNIQUE INDEX IF NOT EXISTS "

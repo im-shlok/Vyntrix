@@ -34,10 +34,13 @@ import EmergencySOS from '@/components/dashboard/EmergencySOS';
 import GovernmentSchemes from '@/components/dashboard/GovernmentSchemes';
 import EducationPortal from '@/components/dashboard/EducationPortal';
 import Preloader from '@/components/ui/Preloader';
+import { apiFetch, ApiError } from '@/lib/api';
 
 export default function Dashboard() {
   const router = useRouter();
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
+  const [sessionLoading, setSessionLoading] = useState<boolean>(true);
+  const [authError, setAuthError] = useState<string | null>(null);
   const [activeLanguage, setActiveLanguage] = useState<string>("en");
   const [activeTab, setActiveTab] = useState<string>("overview"); // overview | diagnostics | market | crisis
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState<boolean>(false);
@@ -49,11 +52,12 @@ export default function Dashboard() {
   const [newsItems, setNewsItems] = useState<any[]>([]);
   const [loadingNews, setLoadingNews] = useState<boolean>(false);
   const agentRequestKeyRef = useRef<string | null>(null);
+  const isAuthenticatedRef = useRef(false);
 
   const fetchNews = async () => {
     setLoadingNews(true);
     try {
-      const res = await fetch('/api/news');
+      const res = await fetch('/api/news', { credentials: 'include' });
       const data = await res.json();
       if (data.success) {
         setNewsItems(data.news);
@@ -419,30 +423,41 @@ export default function Dashboard() {
 
   // Authenticate session on load
   useEffect(() => {
-    const session = localStorage.getItem("kisaan_session");
-    if (!session) {
-      router.push("/auth");
-      return;
-    }
+    let active = true;
+    apiFetch<{ profile?: any }>('/api/auth/me')
+      .then((data) => {
+        if (!active) return;
+        if (data.profile) setFarmerProfile((current: any) => ({ ...current, ...data.profile }));
+        isAuthenticatedRef.current = true;
+        setIsAuthenticated(true);
+      })
+      .catch((error) => {
+        if (!active) return;
+        if (error instanceof ApiError && error.status === 401) {
+          router.replace('/auth');
+        } else {
+          setAuthError(error instanceof Error ? error.message : 'Could not secure your session.');
+        }
+      })
+      .finally(() => {
+        if (active) setSessionLoading(false);
+      });
 
-    const storedUserStr = localStorage.getItem(`kisaan_user_${session}`);
-    if (storedUserStr) {
-      const storedUser = JSON.parse(storedUserStr);
-      setFarmerProfile(storedUser);
-    } else {
-      setFarmerProfile((prev: any) => ({
-        ...prev,
-        farmer_name: session.toUpperCase(),
-        location: "Punjab, India"
-      }));
-    }
-
-    setIsAuthenticated(true);
+    return () => {
+      active = false;
+    };
   }, [router]);
 
-  const handleSignOut = () => {
-    localStorage.removeItem("kisaan_session");
-    router.push("/auth");
+  const handleSignOut = async () => {
+    try {
+      await apiFetch('/api/auth/logout', { method: 'POST' });
+    } catch (error) {
+      console.error('Sign out failed:', error);
+    } finally {
+      isAuthenticatedRef.current = false;
+      setIsAuthenticated(false);
+      router.replace('/auth');
+    }
   };
 
   // Retrieve live multi-agent telemetry once for each profile/language state.
@@ -467,18 +482,15 @@ export default function Dashboard() {
     const fetchInitialAgentData = async (retryCount = 0) => {
       if (farmerProfile.location === "Loading...") return;
       try {
-        const res = await fetch("http://localhost:8000/api/chat", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
+          const data = await apiFetch<any>('/api/chat', {
+            method: "POST",
+            json: {
             query: `telemetry status update for current crop ${farmerProfile.current_crop || 'Rice'} at ${farmerProfile.location || 'Noida'}`,
             language: activeLanguage,
             profile: farmerProfile
-          })
-        });
-        if (!res.ok) throw new Error("HTTP agent endpoint returned error status");
-        const data = await res.json();
-        if (data && active) {
+            }
+          });
+          if (data && active) {
           setAgentOutput(data);
           if (data.explanation) {
             setExplanationText(data.explanation);
@@ -512,68 +524,18 @@ export default function Dashboard() {
     };
   }, [isAuthenticated, activeLanguage, farmerProfile.current_crop, farmerProfile.location]);
 
-    // Voice Command Controller for Dashboard navigation
-  useEffect(() => {
-    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-    if (!SpeechRecognition) return;
-
-    const controllerRec = new SpeechRecognition();
-    controllerRec.continuous = true;
-    controllerRec.interimResults = false;
-    controllerRec.lang = 'en-US';
-
-    controllerRec.onresult = (event: any) => {
-      const speechVal = event.results[event.results.length - 1][0].transcript.toLowerCase().trim();
-      console.log("Dashboard Voice Controller Recognized:", speechVal);
-
-      if (speechVal.includes("overview") || speechVal.includes("map") || speechVal.includes("first tab")) {
-        setActiveTab("overview");
-        triggerToast("Vocal Navigation: Opening Farm Overview");
-      } else if (speechVal.includes("diagnostic") || speechVal.includes("ai") || speechVal.includes("scan") || speechVal.includes("second tab")) {
-        setActiveTab("diagnostics");
-        triggerToast("Vocal Navigation: Opening AI Diagnostics");
-      } else if (speechVal.includes("market") || speechVal.includes("mandi") || speechVal.includes("price") || speechVal.includes("third tab")) {
-        setActiveTab("market");
-        triggerToast("Vocal Navigation: Opening Market Rates");
-      } else if (speechVal.includes("crisis") || speechVal.includes("emergency") || speechVal.includes("sos") || speechVal.includes("fourth tab") || speechVal.includes("academy")) {
-        setActiveTab("crisis");
-        triggerToast("Vocal Navigation: Opening Emergency SOS");
-      } else if (speechVal.includes("sign out") || speechVal.includes("logout") || speechVal.includes("exit")) {
-        triggerToast("Vocal Command: Signing Out");
-        setTimeout(handleSignOut, 800);
-      }
-    };
-
-    controllerRec.onend = () => {
-      setTimeout(() => {
-        if (localStorage.getItem("kisaan_session") !== null) {
-          try {
-            controllerRec.start();
-          } catch (e) {}
-        }
-      }, 600);
-    };
-
-    try {
-      controllerRec.start();
-    } catch (e) {}
-
-    return () => {
-      try {
-        controllerRec.stop();
-      } catch (e) {}
-    };
-  }, []);
+  // Voice input is owned by VoiceAssistant and starts only after the farmer
+  // presses its microphone button. A second always-on recognizer here used to
+  // compete for the microphone and swallow diagnostic commands.
 
   const handleTelemetrySliderChange = async (key: string, val: number) => {
     const updated = { ...telemetry, [key]: val };
     setTelemetry(updated);
 
     try {
-      await fetch("http://localhost:8000/api/iot/telemetry", {
+      await apiFetch('/api/iot/telemetry', {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(updated)
+        json: updated,
       });
     } catch (e) {}
   };
@@ -638,13 +600,22 @@ export default function Dashboard() {
     return score;
   })();
 
-  if (!isAuthenticated) {
+  if (sessionLoading || !isAuthenticated) {
     return (
       <div className="min-h-screen bg-[#050806] flex items-center justify-center relative">
         <Preloader />
         <div className="text-center space-y-4 relative z-10">
-          <Cpu className="text-emerald-500 animate-spin mx-auto" size={32} />
-          <p className="text-xs text-emerald-400 font-bold tracking-wider animate-pulse font-mono">[SECURING_SESSION]</p>
+          {authError ? (
+            <>
+              <p className="text-sm text-red-300 font-bold">{authError}</p>
+              <button onClick={() => window.location.reload()} className="text-xs text-emerald-400 underline">Retry session check</button>
+            </>
+          ) : (
+            <>
+              <Cpu className="text-emerald-500 animate-spin mx-auto" size={32} />
+              <p className="text-xs text-emerald-400 font-bold tracking-wider animate-pulse font-mono">[SECURING_SESSION]</p>
+            </>
+          )}
         </div>
       </div>
     );

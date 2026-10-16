@@ -11,6 +11,7 @@ import {
   User,
   Waves
 } from 'lucide-react';
+import { apiFetch, ApiError } from '@/lib/api';
 
 type ProfileForm = {
   farmer_name: string;
@@ -64,37 +65,54 @@ export default function ProfilePage() {
   const [status, setStatus] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   useEffect(() => {
-    const currentSession = localStorage.getItem('kisaan_session');
-    if (!currentSession) {
-      router.push('/auth');
-      return;
-    }
+    let active = true;
 
-    const storedProfile = localStorage.getItem(`kisaan_user_${currentSession}`);
-    if (storedProfile) {
-      const parsed = JSON.parse(storedProfile);
-      Promise.resolve().then(() => {
+    const loadData = async () => {
+      const [profileResult, telemetryResult] = await Promise.allSettled([
+        apiFetch<Partial<ProfileForm> & { ph?: number; land_size_hectares?: number | string }>('/api/profile/me'),
+        apiFetch<Partial<Record<keyof TelemetryForm, number>>>('/api/iot/telemetry'),
+      ]);
+
+      if (!active) return;
+
+      if (profileResult.status === 'rejected') {
+        if (profileResult.reason instanceof ApiError && profileResult.reason.status === 401) {
+          router.replace('/auth');
+          return;
+        }
+        setStatus({ type: 'error', text: profileResult.reason instanceof Error ? profileResult.reason.message : 'Could not load your profile.' });
+      } else {
+        const profileData = profileResult.value;
         setProfile((current) => ({
           ...current,
-          ...Object.fromEntries(Object.keys(current).map((key) => [key, parsed[key] ?? current[key as keyof ProfileForm]]))
+          ...Object.fromEntries(
+            Object.keys(current).map((key) => [key, profileData[key as keyof ProfileForm] ?? current[key as keyof ProfileForm]])
+          ),
+          land_size_hectares: profileData.land_size_hectares == null
+            ? current.land_size_hectares
+            : String(profileData.land_size_hectares),
         }));
-      });
-    }
+      }
 
-    fetch('http://localhost:8000/api/iot/telemetry')
-      .then((response) => {
-        if (!response.ok) throw new Error('Telemetry unavailable');
-        return response.json();
-      })
-      .then((data) => setTelemetry({
-        soil_moisture: String(data.soil_moisture ?? defaultTelemetry.soil_moisture),
-        soil_ph: String(data.soil_ph ?? defaultTelemetry.soil_ph),
-        nitrogen: String(data.nitrogen ?? defaultTelemetry.nitrogen),
-        phosphorus: String(data.phosphorus ?? defaultTelemetry.phosphorus),
-        potassium: String(data.potassium ?? defaultTelemetry.potassium)
-      }))
-      .catch(() => setStatus({ type: 'error', text: 'Could not load current telemetry values.' }))
-      .finally(() => setLoading(false));
+      if (telemetryResult.status === 'fulfilled') {
+        const telemetryData = telemetryResult.value;
+        setTelemetry({
+          soil_moisture: String(telemetryData.soil_moisture ?? defaultTelemetry.soil_moisture),
+          soil_ph: String(telemetryData.soil_ph ?? (profileResult.status === 'fulfilled' ? profileResult.value.ph : undefined) ?? defaultTelemetry.soil_ph),
+          nitrogen: String(telemetryData.nitrogen ?? defaultTelemetry.nitrogen),
+          phosphorus: String(telemetryData.phosphorus ?? defaultTelemetry.phosphorus),
+          potassium: String(telemetryData.potassium ?? defaultTelemetry.potassium),
+        });
+      } else if (profileResult.status === 'fulfilled') {
+        setStatus({ type: 'error', text: telemetryResult.reason instanceof Error ? telemetryResult.reason.message : 'Could not load current telemetry values.' });
+      }
+      setLoading(false);
+    };
+
+    loadData();
+    return () => {
+      active = false;
+    };
   }, [router]);
 
   const updateProfile = (key: keyof ProfileForm, value: string) => {
@@ -107,8 +125,6 @@ export default function ProfilePage() {
 
   const saveChanges = async (event: FormEvent) => {
     event.preventDefault();
-    const session = localStorage.getItem('kisaan_session');
-    if (!session) return;
     setSaving(true);
     setStatus(null);
 
@@ -122,33 +138,42 @@ export default function ProfilePage() {
       return;
     }
 
-    const profileKey = `kisaan_user_${session}`;
-    const existingProfile = JSON.parse(localStorage.getItem(profileKey) || '{}');
-    const updatedProfile = {
-      ...existingProfile,
-      ...profile,
-      ph: numericTelemetry.soil_ph,
-      land_size_hectares: Number(profile.land_size_hectares)
-    };
-
-    localStorage.setItem(profileKey, JSON.stringify(updatedProfile));
-
+    let profileSaved = false;
     try {
-      const response = await fetch('http://localhost:8000/api/iot/telemetry', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(numericTelemetry)
+      const savedProfile = await apiFetch<Partial<ProfileForm> & { ph?: number }>('/api/profile/me', {
+        method: 'PATCH',
+        json: {
+          ...profile,
+          land_size_hectares: Number(profile.land_size_hectares),
+          ph: numericTelemetry.soil_ph,
+        },
       });
-      if (!response.ok) {
-        const error = await response.json().catch(() => null);
-        throw new Error(error?.detail || 'Telemetry update failed');
-      }
+      profileSaved = true;
+
+      await apiFetch('/api/iot/telemetry', {
+        method: 'POST',
+        json: numericTelemetry,
+      });
+
+      setProfile((current) => ({
+        ...current,
+        ...Object.fromEntries(
+          Object.keys(current).map((key) => [key, savedProfile[key as keyof ProfileForm] ?? current[key as keyof ProfileForm]])
+        ),
+        land_size_hectares: String(savedProfile.land_size_hectares ?? profile.land_size_hectares),
+      }));
 
       setStatus({ type: 'success', text: 'Profile and soil telemetry saved successfully.' });
     } catch (error) {
+      if (error instanceof ApiError && error.status === 401) {
+        router.replace('/auth');
+        return;
+      }
       setStatus({
         type: 'error',
-        text: `Farmer profile saved, but telemetry could not be updated: ${error instanceof Error ? error.message : 'unknown error'}`
+        text: profileSaved
+          ? `Profile saved, but soil telemetry could not be updated: ${error instanceof Error ? error.message : 'unknown error'}`
+          : error instanceof Error ? error.message : 'Could not save your profile and telemetry.'
       });
     } finally {
       setSaving(false);

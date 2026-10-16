@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import LegacyStorageCleanup from "@/components/ui/LegacyStorageCleanup";
 
 export const metadata: Metadata = {
   title: "Agriva - Decentralized Multi-Agent Agricultural Cockpit",
@@ -32,6 +33,7 @@ export default function RootLayout({
         <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Outfit:wght@300;400;600;700;900&display=swap" rel="stylesheet" />
       </head>
       <body className="antialiased bg-[#050806] text-white">
+        <LegacyStorageCleanup />
         {children}
       </body>
     </html>

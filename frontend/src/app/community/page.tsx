@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import { 
@@ -15,6 +14,7 @@ import {
   LogIn
 } from 'lucide-react';
 import Preloader from '@/components/ui/Preloader';
+import { apiFetch, ApiError } from '@/lib/api';
 
 interface ChatMessage {
   id: number;
@@ -26,13 +26,15 @@ interface ChatMessage {
 }
 
 export default function CommunityPage() {
-  const router = useRouter();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [newMessage, setNewMessage] = useState<string>("");
   const [selectedTag, setSelectedTag] = useState<string>("All");
   const [userSession, setUserSession] = useState<string | null>(null);
   const [userDisplayName, setUserDisplayName] = useState<string | null>(null);
   const [activeLanguage, setActiveLanguage] = useState<string>("en");
+  const [loadingMessages, setLoadingMessages] = useState<boolean>(true);
+  const [posting, setPosting] = useState<boolean>(false);
+  const [communityError, setCommunityError] = useState<string | null>(null);
 
   const LANGUAGES = [
     { code: "en", label: "English" },
@@ -243,62 +245,65 @@ export default function CommunityPage() {
 
   // Initialize and check active session
   useEffect(() => {
-    const session = localStorage.getItem("kisaan_session");
-    if (session) {
-      setUserSession(session);
+    let active = true;
 
-      const storedUser = localStorage.getItem(`kisaan_user_${session.toLowerCase()}`);
-      if (storedUser) {
-        try {
-          const user = JSON.parse(storedUser) as { farmer_name?: string };
-          if (user.farmer_name?.trim()) {
-            setUserDisplayName(user.farmer_name.trim());
-          }
-        } catch {
-          setUserDisplayName(null);
-        }
+    const loadCommunity = async () => {
+      const [sessionResult, postsResult] = await Promise.allSettled([
+        apiFetch<{ user?: { username?: string }; profile?: { farmer_name?: string } }>('/api/auth/me'),
+        apiFetch<ChatMessage[]>('/api/community/posts'),
+      ]);
+
+      if (!active) return;
+
+      if (sessionResult.status === 'fulfilled') {
+        const profileName = sessionResult.value.profile?.farmer_name?.trim();
+        setUserSession(sessionResult.value.user?.username || 'authenticated');
+        setUserDisplayName(profileName || sessionResult.value.user?.username || 'Farmer Node');
+      } else if (!(sessionResult.reason instanceof ApiError) || sessionResult.reason.status !== 401) {
+        setCommunityError(sessionResult.reason instanceof Error ? sessionResult.reason.message : 'Could not check your session.');
       }
-    }
 
-    // Load messages from localStorage, if empty set to empty array
-    const storedChats = localStorage.getItem("kisaan_community_chats");
-    if (storedChats) {
-      const parsedMessages = JSON.parse(storedChats) as ChatMessage[];
-      setMessages(parsedMessages.map((message) => {
-        const storedUser = localStorage.getItem(`kisaan_user_${message.author.toLowerCase()}`);
-        if (!storedUser) return message;
-
-        try {
-          const user = JSON.parse(storedUser) as { farmer_name?: string };
-          return user.farmer_name?.trim()
-            ? { ...message, author: user.farmer_name.trim() }
-            : message;
-        } catch {
-          return message;
-        }
-      }));
-    } else {
-      setMessages([]);
-    }
-  }, []);
-
-  const handlePostMessage = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newMessage.trim() || !userSession) return;
-
-    const newMsg: ChatMessage = {
-      id: Date.now(),
-      author: userDisplayName || "Farmer Node",
-      location: "Self Farm Node",
-      tag: selectedTag === "All" ? "#General" : selectedTag,
-      content: newMessage,
-      timestamp: "Just now"
+      if (postsResult.status === 'fulfilled') {
+        setMessages(postsResult.value);
+      } else {
+        setCommunityError(postsResult.reason instanceof Error ? postsResult.reason.message : 'Could not load community posts.');
+      }
+      setLoadingMessages(false);
     };
 
-    const updated = [newMsg, ...messages];
-    setMessages(updated);
-    localStorage.setItem("kisaan_community_chats", JSON.stringify(updated));
-    setNewMessage("");
+    loadCommunity();
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const handlePostMessage = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newMessage.trim() || !userSession || posting) return;
+
+    setPosting(true);
+    setCommunityError(null);
+    try {
+      const createdPost = await apiFetch<ChatMessage>('/api/community/posts', {
+        method: 'POST',
+        json: {
+          content: newMessage.trim(),
+          tag: selectedTag === 'All' ? '#General' : selectedTag,
+        },
+      });
+      setMessages((current) => [createdPost, ...current]);
+      setNewMessage('');
+    } catch (error) {
+      if (error instanceof ApiError && error.status === 401) {
+        setUserSession(null);
+        setUserDisplayName(null);
+        setCommunityError('Your session has expired. Please log in again to post.');
+      } else {
+        setCommunityError(error instanceof Error ? error.message : 'Could not publish your post.');
+      }
+    } finally {
+      setPosting(false);
+    }
   };
 
   const filteredMessages = selectedTag === "All" 
@@ -415,7 +420,8 @@ export default function CommunityPage() {
                 />
                 <button
                   type="submit"
-                  className="p-2 bg-[#10b981] hover:bg-emerald-600 text-black rounded-lg transition-colors flex items-center justify-center shrink-0 cursor-pointer"
+                  disabled={posting}
+                  className="p-2 bg-[#10b981] hover:bg-emerald-600 text-black rounded-lg transition-colors flex items-center justify-center shrink-0 cursor-pointer disabled:cursor-wait disabled:opacity-60"
                 >
                   <Send size={14} />
                 </button>
@@ -438,9 +444,19 @@ export default function CommunityPage() {
               </div>
             )}
 
-            {/* Message feed stream */}
-            <div className="flex-1 space-y-3 max-h-[450px] overflow-y-auto pr-1">
-              {filteredMessages.length > 0 ? (
+             {communityError && (
+               <div className="rounded-xl border border-red-500/25 bg-red-950/20 px-3 py-2 text-[10px] font-semibold text-red-300">
+                 {communityError}
+               </div>
+             )}
+
+             {/* Message feed stream */}
+             <div className="flex-1 space-y-3 max-h-[450px] overflow-y-auto pr-1">
+               {loadingMessages ? (
+                 <div className="glass-panel p-8 bg-black/20 border border-white/5 rounded-xl text-center text-zinc-500">
+                   <p className="text-[11px] font-semibold animate-pulse">Loading community posts...</p>
+                 </div>
+               ) : filteredMessages.length > 0 ? (
                 filteredMessages.map(msg => (
                   <div 
                     key={msg.id}

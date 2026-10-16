@@ -6,12 +6,15 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { Sprout, User, Lock, MapPin, LandPlot, AlertCircle, ArrowRight, CheckCircle2, Terminal, Network, Phone, Home, Mic, Keyboard } from 'lucide-react';
 import Preloader from '@/components/ui/Preloader';
+import { apiFetch, ApiError } from '@/lib/api';
 
 export default function AuthPage() {
   const router = useRouter();
   const [authMode, setAuthMode] = useState<string>("login"); // login | otp | register
   const [errorText, setErrorText] = useState<string | null>(null);
   const [successText, setSuccessText] = useState<string | null>(null);
+  const [checkingSession, setCheckingSession] = useState<boolean>(true);
+  const [submitting, setSubmitting] = useState<boolean>(false);
 
   // Form states
   const [username, setUsername] = useState<string>("");
@@ -29,7 +32,7 @@ export default function AuthPage() {
 
   // Voice Command states
   const [isListening, setIsListening] = useState<boolean>(false);
-  const [isVoiceActive, setIsVoiceActive] = useState<boolean>(true); // Start active by default
+  const [isVoiceActive, setIsVoiceActive] = useState<boolean>(false); // Start only after a user gesture
   const [voiceStatus, setVoiceStatus] = useState<string>("Initializing Voice Assistant...");
   
   const isVoiceActiveRef = useRef(true);
@@ -42,10 +45,24 @@ export default function AuthPage() {
   ]);
 
   useEffect(() => {
-    const session = localStorage.getItem("kisaan_session");
-    if (session) {
-      router.push("/dashboard");
-    }
+    let active = true;
+    apiFetch('/api/auth/me')
+      .then(() => {
+        if (active) router.replace('/dashboard');
+      })
+      .catch((error) => {
+        if (!active) return;
+        if (!(error instanceof ApiError) || error.status !== 401) {
+          setErrorText(error instanceof Error ? error.message : 'Could not check your session.');
+        }
+      })
+      .finally(() => {
+        if (active) setCheckingSession(false);
+      });
+
+    return () => {
+      active = false;
+    };
   }, [router]);
 
   // Terminal log animation simulation
@@ -91,6 +108,17 @@ export default function AuthPage() {
       setLogs((prev) => [...prev, "Voice Assistant: Deactivated."]);
     }
   }, [isVoiceActive]);
+
+  useEffect(() => {
+    return () => {
+      isVoiceActiveRef.current = false;
+      if (recognitionRef.current) {
+        recognitionRef.current.onend = null;
+        try { recognitionRef.current.stop(); } catch {}
+        recognitionRef.current = null;
+      }
+    };
+  }, []);
 
   const initSpeechRecognition = () => {
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
@@ -204,8 +232,9 @@ export default function AuthPage() {
     return coords;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (submitting) return;
     setErrorText(null);
     setSuccessText(null);
 
@@ -214,47 +243,39 @@ export default function AuthPage() {
       return;
     }
 
-    if (authMode === "login") {
+    setSubmitting(true);
+
+    try {
+      if (authMode === "login") {
       if (!password.trim()) {
         setErrorText("Please enter your password.");
+        setSubmitting(false);
         return;
       }
-      const storedUserStr = localStorage.getItem(`kisaan_user_${username.toLowerCase()}`);
-      if (!storedUserStr) {
-        setErrorText("Invalid username or credentials.");
-        return;
-      }
-
-      const storedUser = JSON.parse(storedUserStr);
-      if (storedUser.password !== password) {
-        setErrorText("Incorrect password.");
-        return;
-      }
-
-      localStorage.setItem("kisaan_session", username.toLowerCase());
+      await apiFetch('/api/auth/login', {
+        method: 'POST',
+        json: { username: username.trim(), password },
+      });
       setSuccessText("Authentication successful. Redirecting...");
       setTimeout(() => {
-        router.push("/dashboard");
+        router.replace("/dashboard");
       }, 1000);
 
-    } else {
+      } else {
       // Register
       if (!farmerName.trim() || !location.trim() || !contactNumber.trim() || !address.trim() || !password.trim()) {
         setErrorText("Please fill in all account registration details.");
-        return;
-      }
-
-      const existingUser = localStorage.getItem(`kisaan_user_${username.toLowerCase()}`);
-      if (existingUser) {
-        setErrorText("Username already registered.");
+        setSubmitting(false);
         return;
       }
 
       const farmCoords = getCoordinatesForAddress(address + " " + location);
 
-      const newUser = {
-        username: username.toLowerCase(),
-        password: password,
+      await apiFetch('/api/auth/register', {
+        method: 'POST',
+        json: {
+        username: username.trim(),
+        password,
         farmer_name: farmerName,
         contact_number: contactNumber,
         location: location,
@@ -267,17 +288,28 @@ export default function AuthPage() {
         budget: "Medium",
         lat: farmCoords.lat,
         lng: farmCoords.lng
-      };
-
-      localStorage.setItem(`kisaan_user_${username.toLowerCase()}`, JSON.stringify(newUser));
-      localStorage.setItem("kisaan_session", username.toLowerCase());
+        },
+      });
       
       setSuccessText("Registration complete! Redirecting to Farm OS...");
       setTimeout(() => {
-        router.push("/dashboard");
+        router.replace("/dashboard");
       }, 1200);
+      }
+    } catch (error) {
+      setErrorText(error instanceof Error ? error.message : 'Authentication failed. Please try again.');
+      setSubmitting(false);
     }
   };
+
+  if (checkingSession) {
+    return (
+      <div className="min-h-screen bg-[#050806] flex items-center justify-center">
+        <Preloader />
+        <p className="text-xs text-emerald-400 font-bold tracking-wider animate-pulse font-mono">[CHECKING_SESSION]</p>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen grid grid-cols-1 lg:grid-cols-12 relative overflow-hidden bg-[#050806]">
@@ -548,9 +580,10 @@ export default function AuthPage() {
             <button 
               type="submit"
               id="auth-submit-btn"
-              className="w-full bg-gradient-to-tr from-emerald-600 to-[#10b981] hover:from-emerald-700 hover:to-emerald-600 text-black font-extrabold py-2.5 rounded-lg text-xs transition-all shadow-md shadow-emerald-950 flex items-center justify-center gap-1.5 border border-emerald-500 cursor-pointer"
+              disabled={submitting}
+              className="w-full bg-gradient-to-tr from-emerald-600 to-[#10b981] hover:from-emerald-700 hover:to-emerald-600 text-black font-extrabold py-2.5 rounded-lg text-xs transition-all shadow-md shadow-emerald-950 flex items-center justify-center gap-1.5 border border-emerald-500 cursor-pointer disabled:cursor-wait disabled:opacity-60"
             >
-              {authMode === "register" ? "Register Node" : "Unlock Farm Console"}
+              {submitting ? "Connecting..." : authMode === "register" ? "Register Node" : "Unlock Farm Console"}
               <ArrowRight size={14} />
             </button>
           </form>
