@@ -28,7 +28,8 @@ Built using a stateful LangGraph Multi-Agent network on the backend and Next.js 
 
 - **Frontend**: Next.js 16 (App Router), Webpack Compiler, TailwindCSS, Lucide Icons, HTML5 Geolocation API, Web Speech API.
 - **Backend**: FastAPI, LangGraph (Stateful Agent Workflows), SQLAlchemy (Persistent user memory profiles), SQLite (Local fallback storage), Redis (Telemetry caching fallback), Qdrant Vector Database (Cosine similarity semantic RAG searching).
-- **Retrieval (RAG)**: NVIDIA NIM `baai/bge-m3` multilingual embeddings fused with local BM25 via Reciprocal Rank Fusion. Qdrant is the vector store when reachable, with an in-memory numpy index as fallback; document vectors are cached on disk so restarts cost no API quota. See [RAG pipeline](#-rag-pipeline).
+- **LLM**: Groq-hosted `openai/gpt-oss-120b` (about 1s per answer), falling back to `qwen/qwen3.8-27b` and then `openai/gpt-oss-20b` on Groq. Configurable with `CHAT_MODELS`.
+- **Retrieval (RAG)**: NVIDIA NIM multilingual embeddings (`EMBED_MODEL`, default `nvidia/nemotron-3-embed-1b`) fused with local BM25 via Reciprocal Rank Fusion. Qdrant is the vector store when reachable, with an in-memory numpy index as fallback; document vectors are cached on disk so restarts cost no API quota. See [RAG pipeline](#-rag-pipeline).
 - **Infrastructure**: Docker & Docker Compose (Redis + Qdrant services for local development).
 
 ---
@@ -45,6 +46,11 @@ matching, which an 11-language app needs: a Hindi query matches an English ICAR
 document directly, with no translation step. BM25 handles the exact terms dense
 retrieval is weakest at — `PM-KISAN`, `Mancozeb`, `Alternaria solani`. Results
 are fused by rank, so the two score scales never need to be comparable.
+
+The vector dimension is probed from the first live embedding response rather
+than hardcoded, so `EMBED_MODEL` can be swapped without a code change. If the
+new model's dimension differs, the Qdrant collection is detected as mismatched
+and rebuilt automatically on the next startup.
 
 **Where retrieval is applied.**
 
@@ -126,8 +132,26 @@ This brings up Redis and Qdrant locally, matching the connection settings expect
 Create a `.env` file inside `backend/` (copy from `.env.example` if present) with values such as:
 
 ```env
-# LLM provider key used by the LangGraph agents
-LLM_API_KEY=your_api_key_here
+# Groq key - powers the advisory LLM (chat, weather advisory, vision advice).
+GROQ_API_KEY=your_groq_key_here
+
+# NVIDIA NIM key - powers the RAG embedding model. Without it the system still
+# runs, but retrieval degrades to BM25-only.
+NVIDIA_API_KEY=your_nvidia_key_here
+
+# Optional: chat models tried in order until one answers, as provider:model.
+# A rate-limited or failing model hands over to the next one immediately.
+# Append nim:google/gemma-4-31b-it to use NIM as a last resort; it is off by
+# default because it measured 44-119s per answer.
+# CHAT_MODELS=groq:openai/gpt-oss-120b,groq:qwen/qwen3.8-27b,groq:openai/gpt-oss-20b
+
+# Optional: override the embedding model. The vector dimension is detected
+# automatically, so changing this needs no code change.
+EMBED_MODEL=nvidia/nemotron-3-embed-1b
+
+# Optional retrieval tuning (calibrated for the default model; re-measure if you change it)
+RAG_MIN_DENSE_SCORE=0.35     # cosine floor for dense hits
+RAG_INTENT_THRESHOLD=0.35    # confidence below which the planner uses keywords
 
 # Redis
 REDIS_URL=redis://localhost:6379

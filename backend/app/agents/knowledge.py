@@ -14,7 +14,7 @@ only when the LLM is unreachable.
 from typing import Any, Dict, List
 
 from app.agents.state import AgentState
-from app.rag.retriever import index_corpus, retrieve
+from app.rag.retriever import dense_supported, index_corpus, retrieve
 
 # main.py imports this name at startup. Indexing now covers both the lexical
 # and dense backends, so the old Qdrant-only seeding function is an alias.
@@ -31,12 +31,14 @@ FALLBACK_ADVISORY = (
 
 def knowledge_agent(state: AgentState) -> Dict[str, Any]:
     """Retrieve grounding documents for the user's query."""
-    documents = retrieve(
+    # The explanation agent tells the LLM these references outrank its own
+    # knowledge, so incidental keyword matches must not get through.
+    documents = dense_supported(retrieve(
         state.user_query,
         limit=TOP_K,
         # Reuse the planner's vector so this costs no extra embedding call.
         query_vector=state.query_vector,
-    )
+    ))
 
     if not documents:
         return {

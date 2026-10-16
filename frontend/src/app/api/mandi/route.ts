@@ -2301,7 +2301,7 @@ export async function GET(request: Request) {
   let govApiFailed = false;
 
   try {
-    const backendUrl = process.env.BACKEND_API_URL || 'http://localhost:8000';
+    const backendUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
     const govRes = await fetch(`${backendUrl}/api/mandi/records`, {
       next: { revalidate: 300 },
     });

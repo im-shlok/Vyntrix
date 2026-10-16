@@ -35,4 +35,7 @@ class AgentState(BaseModel):
     
     # Final explainable system recommendations and trace logs
     explanation: str = ""
+    # "provider:model" that wrote the explanation, or "fallback" when every
+    # model failed and the agents' raw outputs were shown instead.
+    explanation_source: str = ""
     messages: List[Dict[str, Any]] = Field(default_factory=list)

@@ -1,11 +1,5 @@
 """Semantic intent routing for the planner.
 
-The planner routes on roughly 400 hardcoded keywords across 11 languages
-(`agents.py`), which misses any paraphrase not on the list — "my plants are
-wilting" matches nothing. Embedding the query against per-intent exemplars
-catches paraphrases, and because bge-m3 is multilingual the exemplars only need
-to exist in English: a Hindi or Tamil query matches them directly.
-
 The keyword lists stay in place as the fallback for when the embedder is
 unavailable or no intent clears the confidence threshold.
 """
@@ -18,8 +12,13 @@ import numpy as np
 from app.rag import embeddings
 
 # Cosine floor for accepting an intent. Below this the query is treated as
-# unroutable and the caller falls back to keyword matching.
-INTENT_THRESHOLD = float(os.getenv("RAG_INTENT_THRESHOLD", "0.5"))
+# unroutable and the caller falls back to keyword matching. Measured for
+# nvidia/nemotron-3-embed-1b: clear intents score 0.40-0.86, off-domain queries
+# 0.07-0.19. 0.35 sits in the gap. Re-measure if EMBED_MODEL changes.
+INTENT_THRESHOLD = float(os.getenv("RAG_INTENT_THRESHOLD", "0.35"))
+# Secondary intents must score within this margin of the best one, so a query
+# that clearly means one thing does not drag in loosely related agents.
+INTENT_MARGIN = 0.15
 # Cap on intents per query, to bound how long the agent pipeline grows.
 MAX_INTENTS = 4
 
@@ -82,10 +81,15 @@ INTENTS: Dict[str, Dict] = {
             "crop insurance for my land",
             "I need an agricultural loan",
             "what documents are needed for the yojana",
+            "government help to install solar panels for irrigation",
+            "free soil testing from the government",
+            "selling produce through the online national market",
+            "micro irrigation sprinkler subsidy",
+            "kisan credit card for farm expenses",
         ],
     },
     "health": {
-        "agents": ["healthcare"],
+        "agents": ["healthcare", "knowledge"],
         "exemplars": [
             "a snake bit me while working in the field",
             "first aid for pesticide poisoning",
@@ -93,10 +97,15 @@ INTENTS: Dict[str, Dict] = {
             "heat stroke symptoms and treatment",
             "where is the nearest hospital",
             "someone swallowed pesticide by accident",
+            "electrocuted by a live wire near the borewell",
+            "injured badly by a thresher machine",
+            "worker fainted in the heat during harvest",
+            "stung by a scorpion while lifting stones",
+            "bitten by a stray dog",
         ],
     },
     "disaster": {
-        "agents": ["disaster", "healthcare"],
+        "agents": ["disaster", "healthcare", "knowledge"],
         "exemplars": [
             "my field is flooded",
             "what to do during a lightning storm",
@@ -104,14 +113,21 @@ INTENTS: Dict[str, Dict] = {
             "how do I estimate flood crop damage",
             "emergency evacuation from the farm",
             "heavy storm destroyed my crops",
+            "hail damaged the wheat crop",
+            "extreme heat wave affecting crops",
+            "no rainfall and crops are drying due to drought",
         ],
     },
     "education": {
-        "agents": ["education"],
+        "agents": ["education", "knowledge"],
         "exemplars": [
             "teach me about drip irrigation",
             "I want to learn modern farming techniques",
             "is there a tutorial or video on this",
+            "how is vermicompost prepared",
+            "steps to take soil samples for the lab",
+            "learn pest management without too many chemicals",
+            "how to do seed treatment with fungicide",
             "take a quiz about crop diseases",
             "explain how composting works",
         ],
@@ -197,9 +213,13 @@ def route(query_vector: Optional[List[float]]) -> Optional[List[str]]:
         if value > best.get(label, -1.0):
             best[label] = value
 
+    if not best:
+        return None
+    top = max(best.values())
+    floor = max(INTENT_THRESHOLD, top - INTENT_MARGIN)
     accepted = [
         (intent, score) for intent, score in best.items()
-        if score >= INTENT_THRESHOLD
+        if score >= floor
     ]
     if not accepted:
         return None

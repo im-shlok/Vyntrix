@@ -17,8 +17,6 @@ export default function VoiceAssistant({ onAgentTriggered, activeLanguage, onLan
   const [currentExecutingIndex, setCurrentExecutingIndex] = useState<number>(-1);
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
 
-  const [geminiKey, setGeminiKey] = useState<string>("");
-
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
@@ -143,90 +141,13 @@ export default function VoiceAssistant({ onAgentTriggered, activeLanguage, onLan
   const t = localizations[activeLanguage] || localizations["en"];
 
   useEffect(() => {
-    const envKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY || "";
-    if (envKey) {
-      setGeminiKey(envKey);
-    } else {
-      const savedKey = localStorage.getItem("gemini_api_key");
-      if (savedKey) {
-          setGeminiKey(savedKey);
-      }
-    }
-  }, []);
-
-  useEffect(() => {
     if (!isRecording) {
       setStatusText("Tap microphone to speak");
     }
   }, [activeLanguage, isRecording]);
 
 
-
-  const startRecording = async () => {
-    setTranscription("");
-    setActivePlan([]);
-    setCurrentExecutingIndex(-1);
-    setAudioUrl(null);
-
-    // Try Web Speech API recognition first for instant transcribing
-    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-    if (SpeechRecognition) {
-      try {
-        const recognition = new SpeechRecognition();
-        recognitionRef.current = recognition;
-        recognition.continuous = false;
-        recognition.interimResults = false;
-
-        const langTags: any = {
-          en: 'en-US',
-          hi: 'hi-IN',
-          pa: 'pa-IN',
-          mr: 'mr-IN',
-          te: 'te-IN',
-          ta: 'ta-IN',
-          kn: 'kn-IN',
-          gu: 'gu-IN',
-          bn: 'bn-IN',
-          ml: 'ml-IN',
-          or: 'or-IN'
-        };
-
-        recognition.lang = langTags[activeLanguage] || 'en-US';
-        setIsRecording(true);
-        setStatusText(t.listening);
-
-        recognition.onresult = (event: any) => {
-          setIsRecording(false);
-          const textResult = event.results[0][0].transcript;
-          setTranscription(textResult);
-          triggerAgentFlowWithText(textResult);
-        };
-
-        recognition.onerror = (event: any) => {
-          console.warn("Speech recognition error fallback to audio stream:", event.error);
-          recognition.stop();
-          recognitionRef.current = null;
-          startRecordingAudioFallback();
-        };
-
-        recognition.onend = () => {
-          //setIsRecording(false);
-          if (recognitionRef.current === recognition) {
-            setIsRecording(false);
-            recognitionRef.current = null;
-          }
-        };
-
-        recognition.start();
-      } catch (err) {
-        startRecordingAudioFallback();
-      }
-    } else {
-      startRecordingAudioFallback();
-    }
-  };
-
-  const startRecordingAudioFallback = async () => {
+  const startRecordingAudio = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
 
@@ -271,7 +192,8 @@ export default function VoiceAssistant({ onAgentTriggered, activeLanguage, onLan
           formData.append("language", activeLanguage);
           formData.append("farmer_profile", farmerProfile);
 
-          const res = await fetch("http://localhost:8000/api/voice/process", {
+          const backendUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+          const res = await fetch(`${backendUrl}/api/voice/process`, {
             method: "POST",
             body: formData
           });
@@ -313,7 +235,7 @@ export default function VoiceAssistant({ onAgentTriggered, activeLanguage, onLan
     if (isRecording) {
       stopRecording();
     } else {
-      startRecordingAudioFallback();
+      startRecordingAudio();
     }
   };
 
@@ -432,12 +354,6 @@ Keep the tone supportive, precise, and tech-aesthetic. Translate everything full
     setIsRecording(false);
     setStatusText(t.processing);
 
-    // Use live Gemini API if user has configured their API Key
-    // if (geminiKey.trim()) {
-    //   await fetchGeminiResponse(text, geminiKey);
-    //   return;
-    // }
-
     try {
       const session = localStorage.getItem("kisaan_session");
       if (!session) throw new Error("No session found");
@@ -466,7 +382,7 @@ Keep the tone supportive, precise, and tech-aesthetic. Translate everything full
 
   const simulateAgentPipelineOffline = (text: string) => {
     const query = text.toLowerCase();
-    console.log("Fuck it its not working")
+    console.log("audio is not working")
     // Detect Crop
     let crop = "Tomato";
     if (query.includes("wheat") || query.includes("गेंहू") || query.includes("ਕਣਕ")) crop = "Wheat";

@@ -3,6 +3,8 @@ import shutil
 import json
 import hashlib
 import datetime
+import time
+import threading
 import uuid
 from urllib.error import HTTPError, URLError
 from urllib.parse import urlencode, quote
@@ -34,9 +36,10 @@ from app.core.database import (
     TelemetrySnapshot
 )
 from app.core.redis_client import redis_client
-from app.core.llm_client import get_client
+from app.core.chatbot import LANGUAGE_NAMES, ask_agriva
+from app.core.llm_client import chat_completion
 from app.rag import get_status as rag_status
-from app.rag import index_corpus, intent_scores, retrieve, warm_up_intents
+from app.rag import CATEGORY_AGRONOMY, index_corpus, intent_scores, retrieve, warm_up_intents
 from app.agents.graph import compiled_graph
 from app.agents.state import AgentState
 from app.mcp.mcp_server import mcp_router
@@ -69,6 +72,54 @@ vision_model: Optional[Any] = None
 os.makedirs(VOICE_DIR, exist_ok=True)
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
+# Uploaded/annotated vision images are transient: they are served once to the
+# client that just analyzed them, then removed. A new upload clears the previous
+# image immediately, and this TTL sweeps anything left behind (e.g. if the user
+# never uploads again). Override with VISION_UPLOAD_TTL_SECONDS in .env.
+VISION_UPLOAD_TTL_SECONDS = int(os.getenv("VISION_UPLOAD_TTL_SECONDS", "900"))  # 15 minutes
+VISION_SWEEP_INTERVAL_SECONDS = 60
+
+
+def delete_vision_uploads() -> int:
+    """Delete every annotated vision image in the uploads dir. Returns count."""
+    removed = 0
+    for name in os.listdir(UPLOAD_DIR):
+        if not name.startswith("vision_"):
+            continue
+        try:
+            os.remove(os.path.join(UPLOAD_DIR, name))
+            removed += 1
+        except OSError:
+            pass  # already gone or held open; skip it
+    return removed
+
+
+def sweep_expired_vision_uploads() -> int:
+    """Delete vision images older than the TTL. Returns count removed."""
+    cutoff = time.time() - VISION_UPLOAD_TTL_SECONDS
+    removed = 0
+    for name in os.listdir(UPLOAD_DIR):
+        if not name.startswith("vision_"):
+            continue
+        path = os.path.join(UPLOAD_DIR, name)
+        try:
+            if os.path.getmtime(path) < cutoff:
+                os.remove(path)
+                removed += 1
+        except OSError:
+            pass
+    return removed
+
+
+def _vision_cleanup_loop():
+    while True:
+        time.sleep(VISION_SWEEP_INTERVAL_SECONDS)
+        try:
+            sweep_expired_vision_uploads()
+        except Exception as exc:
+            print(f"[VisionCleanup] Sweep failed: {exc}")
+
+
 app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 
 # Mount MCP Router
@@ -79,6 +130,12 @@ app.include_router(mcp_router)
 def on_startup():
     print("[Startup] Initializing persistent SQLAlchemy tables...")
     init_db()
+    # Vision uploads are transient; drop anything left from a previous run and
+    # keep a background sweeper removing expired images while the server is up.
+    stale = delete_vision_uploads()
+    if stale:
+        print(f"[Startup] Cleared {stale} stale vision upload(s).")
+    threading.Thread(target=_vision_cleanup_loop, daemon=True).start()
     global vision_model
     if YOLO is None:
         print("[Startup] Vision dependencies are unavailable; install backend requirements.")
@@ -239,22 +296,6 @@ def resolve_location(request: LocationResolveRequest):
     finally:
         db.close()
 
-client = get_client()
-
-VISION_LANGUAGE_NAMES = {
-    "en": "English",
-    "hi": "Hindi",
-    "pa": "Punjabi",
-    "mr": "Marathi",
-    "te": "Telugu",
-    "ta": "Tamil",
-    "kn": "Kannada",
-    "gu": "Gujarati",
-    "bn": "Bengali",
-    "ml": "Malayalam",
-    "or": "Odia",
-}
-
 def normalize_vision_label(label: str) -> str:
     """Turn a YOLO class name into natural language for retrieval.
 
@@ -268,7 +309,7 @@ def normalize_vision_label(label: str) -> str:
 
 def get_vision_advice(labels: list[str], language: str) -> tuple[dict[str, dict[str, str]], Optional[str]]:
     """Generate cautious, crop-specific treatment guidance for detections."""
-    language_name = VISION_LANGUAGE_NAMES.get(language, "English")
+    language_name = LANGUAGE_NAMES.get(language, "English")
 
     # Ground the advice in retrieved agronomy documents. Without this the model
     # is told "do not invent a disease" while being given nothing to work from.
@@ -278,7 +319,7 @@ def get_vision_advice(labels: list[str], language: str) -> tuple[dict[str, dict[
         seen_ids = set()
         for label in labels:
             for document in retrieve(normalize_vision_label(label), limit=2,
-                                     category="agronomy"):
+                                     category=CATEGORY_AGRONOMY):
                 if document.id in seen_ids:
                     continue
                 seen_ids.add(document.id)
@@ -315,20 +356,19 @@ Return ONLY valid JSON in this shape:
 }}
 """
     try:
-        completion = client.chat.completions.create(
-            model="google/gemma-4-31b-it",
-            messages=[
+        # Reasoning tokens count against max_tokens on the Groq models, and
+        # non-English JSON is token-heavy, so 700 could truncate the JSON.
+        content, _ = chat_completion(
+            [
                 {"role": "system", "content": "Return valid JSON only. Never use markdown fences."},
                 {"role": "user", "content": prompt},
             ],
             temperature=0.1,
             top_p=0.8,
-            max_tokens=700,
-            stream=False,
+            max_tokens=1500,
         )
-        content = completion.choices[0].message.content
         if not content:
-            raise ValueError("Vision advice model returned an empty response.")
+            raise ValueError("Every vision advice model failed or returned an empty response.")
         advice = json.loads(content.strip().removeprefix("```json").removesuffix("```").strip())
         if not isinstance(advice, dict):
             raise ValueError("Vision advice model returned an invalid JSON object.")
@@ -369,79 +409,13 @@ def calculate_vision_severity(confidence: float, language: str) -> tuple[str, st
     translated = VISION_SEVERITY_TRANSLATIONS.get(language, VISION_SEVERITY_TRANSLATIONS["en"])
     return severity_key, translated[severity_key]
 
-LANGUAGE_NAMES = {
-    "en": "English",
-    "hi": "Hindi (Devanagari)",
-    "pa": "Punjabi (Gurmukhi)",
-    "mr": "Marathi (Devanagari)",
-    "te": "Telugu",
-    "ta": "Tamil",
-    "kn": "Kannada",
-    "gu": "Gujarati",
-    "bn": "Bengali",
-    "ml": "Malayalam",
-    "or": "Odia",
-}
-
 @app.post("/api/chatbot")
 def chatbot_endpoint(request: ChatRequest):
-    language_name = LANGUAGE_NAMES.get(request.language, "English")
-    default_system_prompt = f"""
-You are Agriva, an AI assistant specialized ONLY in agriculture.
-The user's selected language is {language_name} (code: {request.language}).
-Write the entire answer in that language. This includes the summary, headings,
-category labels, table headings, bullet labels, and closing text. Do not switch
-to English in the middle of the answer. Keep unavoidable crop names, product
-names, and standard abbreviations only when they are proper names or have no
-clear translation.
-
-Your domain includes:
-- Crop diseases
-- Plant health
-- Fertilizers
-- Irrigation
-- Weather for farming
-- Soil analysis
-- Livestock
-- Government agricultural schemes
-- Mandi prices
-- Precision agriculture
-
-If a user asks anything outside agriculture, farming, crops, livestock,
-horticulture, or rural farming practices, do not answer the question.
-
-Instead reply politely:
-
-"I'm Agriva, an agriculture assistant. I can only help with farming-related
-questions such as crop diseases, fertilizers, irrigation, weather, soil health,
-and government schemes."
-
-Never provide programming code, mathematics, general knowledge, essays,
-jokes, recipes, or other unrelated content.
-"""
-
-    system_prompt = request.system_prompt if request.system_prompt else default_system_prompt
-    completion = client.chat.completions.create(
-        model="google/gemma-4-31b-it",
-        messages=[
-            {
-            "role": "system",
-            "content": f"{request.system_prompt}\n\n{default_system_prompt}" if request.system_prompt else default_system_prompt
-        },
-            {
-                "role": "user",
-                "content": request.query
-            }
-        ],
-        temperature=0.2,
-        top_p=0.8,
-        max_tokens=1000,
-        stream=False
-    )
-
-    answer = completion.choices[0].message.content
-    print(f"[Chatbot] User Query: {request.query}\n[Chatbot] Response: {answer}")
-
+    answer, _ = ask_agriva(request.query, system_prompt=request.system_prompt, language=request.language)
+    if not answer:
+        # An error status, not an empty answer, so VoiceAssistant falls back
+        # to its offline pipeline.
+        raise HTTPException(status_code=503, detail="All chat models are unavailable.")
     return {
         "answer": answer
     }
@@ -503,8 +477,14 @@ def chat_endpoint(request: ChatRequest):
             if cached_output and (
                 datetime.datetime.utcnow() - cached_output.created_at
             ).total_seconds() < 900:
-                print(f"[Agent Cache] HIT telemetry output for {request.query}")
-                return json.loads(cached_output.payload)
+                cached_payload = json.loads(cached_output.payload)
+                # Entries written when the LLM failed, or before
+                # explanation_source existed, hold the non-LLM fallback text.
+                # Serving one would repeat it for the rest of the 15 minutes.
+                source = cached_payload.get("explanation_source")
+                if source and source != "fallback":
+                    print(f"[Agent Cache] HIT telemetry output for {request.query}")
+                    return cached_payload
             print(f"[Agent Cache] MISS telemetry output for {request.query}")
         finally:
             cache_db.close()
@@ -533,6 +513,7 @@ def chat_endpoint(request: ChatRequest):
             profile = final_state.get("farmer_profile", {})
             retrieved_docs = final_state.get("retrieved_docs", [])
             routing_mode = final_state.get("routing_mode", "keyword")
+            explanation_source = final_state.get("explanation_source", "")
         else:
             plan = final_state.execution_plan
             vision = final_state.vision_results
@@ -547,6 +528,7 @@ def chat_endpoint(request: ChatRequest):
             profile = final_state.farmer_profile
             retrieved_docs = final_state.retrieved_docs
             routing_mode = final_state.routing_mode
+            explanation_source = final_state.explanation_source
 
         explanation = re.sub(r"\[\d+\]", "", explanation)
         if request.need_audio:
@@ -574,10 +556,12 @@ def chat_endpoint(request: ChatRequest):
             "profile": profile,
             "retrieved_docs": retrieved_docs,
             "routing_mode": routing_mode,
+            # "provider:model" that wrote the explanation, or "fallback".
+            "explanation_source": explanation_source,
             "speech_url": speech_url if request.need_audio else None
         }
 
-        if is_telemetry_query and not request.need_audio:
+        if is_telemetry_query and not request.need_audio and explanation_source != "fallback":
             cache_db = SessionLocal()
             try:
                 cached_output = cache_db.query(AgentOutputCache).filter(
@@ -610,6 +594,10 @@ async def analyze_crop_image(
     """Run the startup-loaded YOLO leaf detector and return an annotated image."""
     if vision_model is None:
         raise HTTPException(status_code=503, detail="Vision model is unavailable.")
+
+    # Only the most recent analysis is ever shown, so drop previous uploads now
+    # rather than letting them pile up until the TTL sweep catches them.
+    delete_vision_uploads()
 
     allowed_types = {"image/jpeg", "image/png", "image/webp"}
     if file.content_type not in allowed_types:

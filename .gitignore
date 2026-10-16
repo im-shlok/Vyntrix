@@ -5,6 +5,9 @@ __pycache__/
 # Database
 backend/kisaan.db
 
+# Cached embedding vectors (regenerated on startup from the corpus)
+backend/.rag_cache/
+
 # User uploads
 backend/app/static/uploads/
 
@@ -21,3 +24,4 @@ node_modules/
 
 .vscode/
 
+.claude/

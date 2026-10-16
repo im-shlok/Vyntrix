@@ -17,12 +17,14 @@ from app.rag.corpus import (
     CATEGORY_SCHEME,
     Document,
     get_corpus,
+    get_guides,
+    scheme_key,
 )
 from app.rag.embeddings import embed_query
 from app.rag.intents import debug_scores as intent_scores
 from app.rag.intents import route as route_intent
 from app.rag.intents import warm_up as warm_up_intents
-from app.rag.retriever import RetrievedDoc, get_status, index_corpus, retrieve
+from app.rag.retriever import RetrievedDoc, dense_supported, get_status, index_corpus, retrieve
 
 __all__ = [
     "CATEGORY_AGRONOMY",
@@ -32,12 +34,15 @@ __all__ = [
     "CATEGORY_SCHEME",
     "Document",
     "RetrievedDoc",
+    "dense_supported",
     "embed_query",
     "get_corpus",
+    "get_guides",
     "get_status",
     "index_corpus",
     "intent_scores",
     "retrieve",
     "route_intent",
+    "scheme_key",
     "warm_up_intents",
 ]

@@ -1,51 +1,27 @@
 import json
+import re
 import urllib.request
 import urllib.error
-from typing import Dict, Any, List
+from typing import Dict, Any, List, Tuple
+from app.core.chatbot import ask_agriva
 from app.core.seed_data import (
     MANDI_PRICES, GOVERNMENT_SCHEMES, HEALTHCARE_GUIDES,
     DISASTER_GUIDES, EDUCATION_TUTORIALS, QUIZZES
 )
 from app.agents.state import AgentState
-from app.rag import CATEGORY_DISASTER, CATEGORY_EDUCATION, CATEGORY_HEALTH
-from app.rag import embed_query, retrieve, route_intent
+from app.rag import CATEGORY_DISASTER, CATEGORY_EDUCATION, CATEGORY_HEALTH, CATEGORY_SCHEME
+from app.rag import dense_supported, embed_query, get_guides, retrieve, route_intent, scheme_key
 
-# Calls the new chatbot api directly instead of using gemini
-def call_chatbot_api(
-    prompt: str,
-    system_prompt: str = None,
-    language: str = "en",
-    farmer_profile: Dict[str, Any] = None
-) -> str:
-    url = "http://localhost:8000/api/chatbot"
-    payload = json.dumps({
-        "query": prompt,
-        "system_prompt": system_prompt,
-        "language": language,
-        "profile": farmer_profile
-    }).encode("utf-8")
-
-    req = urllib.request.Request(
-        url,
-        data=payload,
-        headers={"Content-Type": "application/json"},
-        method="POST",
-    )
-
-    try:
-        with urllib.request.urlopen(req, timeout=90) as response:
-            res = json.loads(response.read().decode("utf-8"))
-            # The reponse is someow has br in it
-            answer = (res.get("answer") or "").strip()
-            answer = answer.replace("<br>", "\n")
-            answer = answer.replace("<br/>", "\n")
-            answer = answer.replace("<br />", "\n")
-
-            return answer
-
-    except Exception as e:
-        print("Backend /api/chatbot request failed:", e)
-        return ""
+# Asks the Agriva assistant in-process. This used to be an HTTP request to this
+# same server's /api/chatbot with its own 90-second timeout: when the model was
+# slow the agent gave up and used its fallback text, while the endpoint went on
+# to finish the answer anyway. That is why the log showed "timed out" and then
+# a response a few seconds later.
+def ask_llm(prompt: str, system_prompt: str = None, language: str = "en") -> Tuple[str, str]:
+    """Returns (answer, "provider:model"), or ("", "") when every model failed."""
+    answer, model = ask_agriva(prompt, system_prompt=system_prompt, language=language)
+    # Some models put HTML line breaks in otherwise plain-text answers.
+    return re.sub(r"<br\s*/?>", "\n", answer, flags=re.IGNORECASE).strip(), model
 
 # Helper to fetch real-time weather from Open-Meteo API using latitude and longitude coordinates
 def fetch_realtime_weather(lat: float, lng: float) -> dict:
@@ -182,21 +158,26 @@ def _keyword_plan(query: str) -> List[str]:
         plan.extend(["government", "knowledge"])
 
     # Healthcare / first aid keywords
+    # Includes dog, scorpion and electric-shock terms so the guides in
+    # data/corpus/health/ stay reachable when the embedder misreads short
+    # colloquial phrases. Stems such as "कुत्त" cover both कुत्ता and कुत्ते.
     health_kw = [
         "snake", "bite", "poison", "heat stroke", "first aid", "health", "hospital",
-        "सांप", "डंक", "जहर", "प्राथमिक", "अस्पताल", "स्वास्थ्य",
-        "ਸੱਪ", "ਡੰਗ", "ਜ਼ਹਿਰ", "ਹਸਪਤਾਲ",
-        "साप", "विष", "रुग्णालय",
-        "பாம்பு", "விஷம்", "மருத்துவமனை",
-        "పాము", "విషం", "ఆసుపత్రి",
-        "ಹಾವು", "ವಿಷ", "ಆಸ್ಪತ್ರೆ",
-        "સાપ", "ઝેર", "હોસ્પિટલ",
-        "সাপ", "বিষ", "হাসপাতাল",
-        "പാമ്പ്", "വിഷം", "ആശുപത്രി",
-        "ସାପ", "ବିଷ", "ଡାକ୍ତରଖାନା"
+        "dog", "rabies", "scorpion", "electric shock", "electrocut", "accident",
+        "shock", "bleeding", "blood", "thresher", "chaff cutter",
+        "सांप", "डंक", "जहर", "प्राथमिक", "अस्पताल", "स्वास्थ्य", "कुत्त", "बिच्छू", "करंट",
+        "ਸੱਪ", "ਡੰਗ", "ਜ਼ਹਿਰ", "ਹਸਪਤਾਲ", "ਕੁੱਤ", "ਬਿੱਛੂ", "ਕਰੰਟ",
+        "साप", "विष", "रुग्णालय", "कुत्र", "विंचू",
+        "பாம்பு", "விஷம்", "மருத்துவமனை", "நாய்", "தேள்",
+        "పాము", "విషం", "ఆసుపత్రి", "కుక్క", "తేలు",
+        "ಹಾವು", "ವಿಷ", "ಆಸ್ಪತ್ರೆ", "ನಾಯಿ", "ಚೇಳು",
+        "સાપ", "ઝેર", "હોસ્પિટલ", "કૂતર", "વીંછી",
+        "সাপ", "বিষ", "হাসপাতাল", "কুকুর", "বিছে", "বিছা",
+        "പാമ്പ്", "വിഷം", "ആശുപത്രി", "നായ", "തേൾ",
+        "ସାପ", "ବିଷ", "ଡାକ୍ତରଖାନା", "କୁକୁର", "ବିଛା"
     ]
     if any(k in query for k in health_kw):
-        plan.extend(["healthcare"])
+        plan.extend(["healthcare", "knowledge"])
 
     # Disaster keywords
     disaster_kw = [
@@ -213,7 +194,7 @@ def _keyword_plan(query: str) -> List[str]:
         "ବନ୍ୟା", "ଝଡ଼"
     ]
     if any(k in query for k in disaster_kw):
-        plan.extend(["disaster", "healthcare"])
+        plan.extend(["disaster", "healthcare", "knowledge"])
 
     # Education keywords
     edu_kw = [
@@ -230,7 +211,7 @@ def _keyword_plan(query: str) -> List[str]:
         "ଶିକ୍ଷା", "ଭିଡିଓ"
     ]
     if any(k in query for k in edu_kw):
-        plan.extend(["education"])
+        plan.extend(["education", "knowledge"])
 
     # Memory / profile keywords
     # memory_kw = [
@@ -415,7 +396,7 @@ def weather_agent(state: AgentState) -> Dict[str, Any]:
     
     # Query backend LLM for custom weather advisory based on real-time values
     prompt = f"Given location {location} ({lat}, {lng}) has current temperature {temp}C, humidity {humidity}%, and precipitation chance {rain_prob}%. Generate a short, precise 1-sentence weather warning and a 1-sentence agricultural advisory for the current crop {safe_profile.get('current_crop', 'Rice')}. Respond in format warning: [Warning text or 'None'] advisory: [Advisory text]"
-    gemini_resp = call_chatbot_api(prompt=prompt, language=state.language, farmer_profile=safe_profile)
+    gemini_resp, _ = ask_llm(prompt=prompt, language=state.language)
     
     warning = "None"
     advisory = "Irrigate crop in early morning." if rain_prob < 50 else "Suspend irrigation, clear drainage paths."
@@ -523,70 +504,136 @@ def marketplace_agent(state: AgentState) -> Dict[str, Any]:
     }
 
 # 7. Government Scheme Agent
+def _selection_mode(document: Any) -> str:
+    return "semantic" if document.dense_score > 0 else "lexical"
+
+
+# Seed schemes overlaid with markdown schemes from data/corpus/scheme/. A
+# markdown scheme only qualifies when it supplies every field the scheme
+# card renders.
+def _scheme_registry() -> Dict[str, Dict[str, Any]]:
+    registry = {scheme_key(s["name"]): s for s in GOVERNMENT_SCHEMES}
+    for key, guide in get_guides(CATEGORY_SCHEME).items():
+        if guide.get("benefits") and guide.get("documents") and guide.get("steps"):
+            registry[key] = {
+                "name": guide["title"],
+                "benefits": guide["benefits"],
+                "eligibility": guide.get("eligibility", ""),
+                "documents": guide["documents"],
+                "steps": guide["steps"],
+            }
+    return registry
+
+
 def government_agent(state: AgentState) -> Dict[str, Any]:
-    # Match schemes based on profile/crop
-    matched = []
-    crop = state.farmer_profile.get("current_crop", "Tomato")
-    land_size = state.farmer_profile.get("land_size_hectares", 1.5)
-    
-    for scheme in GOVERNMENT_SCHEMES:
-        if "PM-KISAN" in scheme["name"] and land_size <= 2.0:
-            matched.append(scheme)
-        elif "Fasal Bima" in scheme["name"]:
-            matched.append(scheme)
-        elif "Machinery" in scheme["name"] and "drone" in state.user_query.lower():
-            matched.append(scheme)
-            
-    if not matched:
-        matched = [GOVERNMENT_SCHEMES[0]] # Fallback to PM-KISAN
+    registry = _scheme_registry()
+
+    # Semantic match first, so "subsidy for a solar pump" finds PM-KUSUM
+    # instead of always returning the same two schemes. The dashboard's
+    # "telemetry status" system query is not a scheme question, so it skips
+    # retrieval and gets the default schemes.
+    documents = []
+    if state.routing_mode != "telemetry":
+        documents = dense_supported(retrieve(
+            state.user_query,
+            limit=4,
+            category=CATEGORY_SCHEME,
+            query_vector=state.query_vector,
+        ))
+    keys: List[str] = []
+    for document in documents:
+        if document.guide_key in registry and document.guide_key not in keys:
+            keys.append(document.guide_key)
+    selection_mode = _selection_mode(documents[0]) if keys else "rules"
+
+    if not keys:
+        # PM-KISAN covers all landholding farmer families since June 2019,
+        # so it is no longer limited to holdings of 2 hectares or less.
+        for scheme in GOVERNMENT_SCHEMES:
+            if "PM-KISAN" in scheme["name"] or "Fasal Bima" in scheme["name"]:
+                keys.append(scheme_key(scheme["name"]))
+            elif "Machinery" in scheme["name"] and "drone" in state.user_query.lower():
+                keys.append(scheme_key(scheme["name"]))
+
+    if not keys:
+        keys = [scheme_key(GOVERNMENT_SCHEMES[0]["name"])]  # Fallback to PM-KISAN
+
+    matched = [registry[key] for key in keys[:3] if key in registry]
 
     explanation_list = []
     for s in matched:
         explanation_list.append(f"- **{s['name']}**: {s['benefits']} (Required documents: {', '.join(s['documents'])}). Steps: {s['steps'][0]} -> {s['steps'][-1]}.")
-        
+
     explanation = "\n".join(explanation_list)
     return {
         "schemes": matched,
         "explanation": state.explanation + f"\n\n[Government Schemes Recommendations]\n{explanation}",
-        "messages": state.messages + [{"role": "assistant", "content": f"[Government Scheme] Matched {len(matched)} programs."}]
+        "messages": state.messages + [{"role": "assistant", "content": f"[Government Scheme] Matched {len(matched)} programs ({selection_mode} match)."}]
     }
 
+# Seed guides overlaid with markdown guides from data/corpus/<category>/, so a
+# new markdown file with a guide_key and a steps section becomes a selectable
+# card without code changes.
+def _merged_guides(seed: Dict[str, Any], category: str) -> Dict[str, Any]:
+    merged = dict(seed)
+    for key, guide in get_guides(category).items():
+        if guide.get("steps"):
+            merged[key] = guide
+    return merged
+
+
 # Resolves a guide by semantic retrieval, falling back to keyword matching.
-# Retrieval only *selects* which guide applies; the structured seed dict still
+# Retrieval only *selects* which guide applies; the structured record still
 # supplies the step arrays the frontend renders, so the response shape is
 # unchanged.
 def _select_guide(state: AgentState, guides: Dict[str, Any], category: str,
                   keyword_rules: List[tuple], default_key: str) -> tuple:
-    documents = retrieve(
+    # Scan a few results, not just the top one: knowledge-base entries share
+    # these categories but carry no guide_key, and one ranking first must not
+    # push a Hindi or Tamil query onto the English-only keyword fallback.
+    documents = dense_supported(retrieve(
         state.user_query,
-        limit=1,
+        limit=3,
         category=category,
         query_vector=state.query_vector,
-    )
+    ))
     for document in documents:
         if document.guide_key in guides:
-            return document.guide_key, "semantic"
+            return document.guide_key, _selection_mode(document)
 
     query = state.user_query.lower()
     for keywords, key in keyword_rules:
-        if any(keyword in query for keyword in keywords):
+        if key in guides and any(keyword in query for keyword in keywords):
             return key, "keyword"
     return default_key, "default"
 
 
 # 8. Healthcare Agent
 def healthcare_agent(state: AgentState) -> Dict[str, Any]:
+    guides = _merged_guides(HEALTHCARE_GUIDES, CATEGORY_HEALTH)
     key, selection_mode = _select_guide(
         state,
-        HEALTHCARE_GUIDES,
+        guides,
         CATEGORY_HEALTH,
+        # Ordered specific-first, so "dog bite" is not caught by the generic
+        # "bite" rule. Native-script terms cover short colloquial phrases the
+        # embedder scores poorly. Rules naming a missing guide are skipped.
         keyword_rules=[
-            (("snake", "bite"), "snake_bite"),
-            (("poison", "pesticide", "spray"), "pesticide_poisoning"),
+            (("dog", "rabies", "monkey", "कुत्त", "ਕੁੱਤ", "कुत्र", "நாய்", "కుక్క",
+              "ನಾಯಿ", "કૂતર", "কুকুর", "നായ", "କୁକୁର"), "dog_bite"),
+            (("scorpion", "बिच्छू", "ਬਿੱਛੂ", "विंचू", "தேள்", "తేలు", "ಚೇಳು",
+              "વીંછી", "বিছে", "বিছা", "തേൾ", "ବିଛା"), "scorpion_sting"),
+            (("snake", "सांप", "ਸੱਪ", "साप", "பாம்பு", "పాము", "ಹಾವು", "સાપ",
+              "সাপ", "പാമ്പ്", "ସାପ"), "snake_bite"),
+            (("electric", "electrocut", "shock", "करंट", "ਕਰੰਟ"), "electric_shock"),
+            (("bite",), "snake_bite"),
+            (("poison", "pesticide", "spray", "जहर", "ज़हर", "ਜ਼ਹਿਰ", "विष", "விஷம்",
+              "విషం", "ವಿಷ", "ઝેર", "বিষ", "വിഷം", "ବିଷ"), "pesticide_poisoning"),
+            (("bleeding", "injury", "injured", "thresher", "chaff", "machine"), "machinery_injury"),
         ],
         default_key="heat_stroke",
     )
-    advice = HEALTHCARE_GUIDES[key]
+    advice = guides[key]
 
     medical_advice = {
         "condition": key.replace("_", " ").title(),
@@ -605,27 +652,47 @@ def healthcare_agent(state: AgentState) -> Dict[str, Any]:
     }
 
 # 9. Disaster Agent
+# Simulated alerts kept for the two original guide types. Other types get an
+# honest pointer to official warnings rather than an invented alert.
+DISASTER_WARNINGS = {
+    "lightning": "Yellow Warning: Light-to-moderate lightning storms forecasted over the sub-district.",
+    "flood": "High Alert: River levels expected to cross danger mark.",
+}
+DEFAULT_DISASTER_WARNING = "Check the latest IMD warning for your district and follow local administration instructions."
+
+
 def disaster_agent(state: AgentState) -> Dict[str, Any]:
+    guides = _merged_guides(DISASTER_GUIDES, CATEGORY_DISASTER)
     disaster_type, selection_mode = _select_guide(
         state,
-        DISASTER_GUIDES,
+        guides,
         CATEGORY_DISASTER,
-        keyword_rules=[(("flood", "submerge", "water"), "flood")],
+        # Specific hazards first; "water" stays last because drought and
+        # cyclone queries mention water too.
+        keyword_rules=[
+            (("cyclone",), "cyclone"),
+            (("hail",), "hailstorm"),
+            (("heatwave", "heat wave"), "heatwave"),
+            (("drought", "dry spell"), "drought"),
+            (("flood", "submerge", "water"), "flood"),
+        ],
         default_key="lightning",
     )
-    guide = DISASTER_GUIDES[disaster_type]
+    guide = guides[disaster_type]
 
     # Crop damage calculator
     damage_est = "N/A"
     if disaster_type == "flood":
         # Estimate damage based on water logging duration
         damage_est = "Crops submerged for over 48 hours suffer roughly 60-80% yield loss. Fungal root rots may set in."
+    elif guide.get("meta", {}).get("damage_estimate"):
+        damage_est = guide["meta"]["damage_estimate"]
 
     disaster_alerts = {
         "alert_type": disaster_type.upper(),
         "steps": guide["steps"],
         "damage_estimator": damage_est,
-        "active_warnings": ["Yellow Warning: Light-to-moderate lightning storms forecasted over the sub-district." if disaster_type == "lightning" else "High Alert: River levels expected to cross danger mark."]
+        "active_warnings": [DISASTER_WARNINGS.get(disaster_type, DEFAULT_DISASTER_WARNING)]
     }
 
     steps_str = "\n- ".join(guide["steps"])
@@ -640,24 +707,51 @@ def disaster_agent(state: AgentState) -> Dict[str, Any]:
     }
 
 # 10. Education Agent
+# Seed tutorials overlaid with markdown tutorials from data/corpus/education/.
+# A markdown file becomes a tutorial when it has a summary and a duration.
+def _tutorial_registry() -> Dict[str, Dict[str, Any]]:
+    registry = {t["id"]: t for t in EDUCATION_TUTORIALS}
+    for key, guide in get_guides(CATEGORY_EDUCATION).items():
+        meta = guide.get("meta", {})
+        if guide.get("summary") and meta.get("duration"):
+            registry[key] = {
+                "id": key,
+                "title": guide["title"],
+                "crop": meta.get("crop", "All Crops"),
+                "duration": meta["duration"],
+                "summary": guide["summary"],
+                "quiz_id": meta.get("quiz_id", ""),
+            }
+    return registry
+
+
 def education_agent(state: AgentState) -> Dict[str, Any]:
+    registry = _tutorial_registry()
+    # Quiz explanations are indexed too; a matching quiz points to its tutorial.
+    quiz_owner = {t["quiz_id"]: key for key, t in registry.items() if t.get("quiz_id")}
+
     # Semantic retrieval over tutorial text, which catches topic matches the
     # old `tut["crop"] in query or "irrigation" in query` check could not.
-    documents = retrieve(
+    documents = dense_supported(retrieve(
         state.user_query,
-        limit=3,
+        limit=4,
         category=CATEGORY_EDUCATION,
         query_vector=state.query_vector,
-    )
-    matched_ids = [document.guide_key for document in documents]
-    matched_tuts = [t for t in EDUCATION_TUTORIALS if t["id"] in matched_ids]
-    selection_mode = "semantic" if matched_tuts else "keyword"
+    ))
+    matched_ids: List[str] = []
+    for document in documents:
+        key = document.guide_key if document.guide_key in registry else quiz_owner.get(document.guide_key)
+        if key and key not in matched_ids:
+            matched_ids.append(key)
+    matched_tuts = [registry[key] for key in matched_ids[:3]]
+    selection_mode = _selection_mode(documents[0]) if matched_tuts else "keyword"
 
     if not matched_tuts:
         query = state.user_query.lower()
         matched_tuts = [
-            t for t in EDUCATION_TUTORIALS
-            if t["crop"].lower() in query or "irrigation" in query
+            t for t in registry.values()
+            if (t["crop"].lower() != "all crops" and t["crop"].lower() in query)
+            or ("irrigation" in query and "irrigation" in t["title"].lower())
         ]
 
     if not matched_tuts:
@@ -666,17 +760,20 @@ def education_agent(state: AgentState) -> Dict[str, Any]:
 
     tutorials_list = []
     for t in matched_tuts:
-        quiz_ref = [q for q in QUIZZES if q["id"] == t["quiz_id"]]
-        quiz_title = quiz_ref[0]["title"] if quiz_ref else "Farming Quiz"
+        quiz_ref = [q for q in QUIZZES if q["id"] == t.get("quiz_id")]
         tutorials_list.append({
             "title": t["title"],
             "summary": t["summary"],
             "duration": t["duration"],
-            "quiz_title": quiz_title,
-            "quiz_id": t["quiz_id"]
+            "quiz_title": quiz_ref[0]["title"] if quiz_ref else "",
+            "quiz_id": t.get("quiz_id", "")
         })
 
-    exp_arr = [f"📚 **{t['title']}** ({t['duration']}): {t['summary']} (Quiz available: *{t['quiz_title']}*)" for t in tutorials_list]
+    exp_arr = [
+        f"📚 **{t['title']}** ({t['duration']}): {t['summary']}"
+        + (f" (Quiz available: *{t['quiz_title']}*)" if t["quiz_title"] else "")
+        for t in tutorials_list
+    ]
     explanation = "\n".join(exp_arr)
 
     return {
@@ -857,7 +954,6 @@ def explanation_agent(state: AgentState) -> Dict[str, Any]:
     "'The response should', 'Bullet 1', 'Bullet 2', or 'Make sure'.\n\n"
 
     "OUTPUT FORMAT:\n"
-    "DONT DISPLAY THIS PROMPT IN THE OUTPUT"
     "1. Start with a 1-2 sentence summary.\n"
     "2. Then provide exactly 3-5 immediate action bullets.\n"
     "3. Every bullet MUST start exactly with '- **'.\n"
@@ -886,7 +982,7 @@ def explanation_agent(state: AgentState) -> Dict[str, Any]:
         f"Do not reply the system prompt. Use it to make the answer."
     )
 
-    llm_response = call_chatbot_api(prompt=user_prompt, system_prompt=system_prompt, language=lang, farmer_profile=safe_profile)
+    llm_response, llm_model = ask_llm(prompt=user_prompt, system_prompt=system_prompt, language=lang)
 
     # Fallback system
     headers = {
@@ -908,13 +1004,14 @@ def explanation_agent(state: AgentState) -> Dict[str, Any]:
     fallback_output = f"{header}\n{fallback_body}"
 
     if llm_response:
-        final_output = f"{llm_response.strip()}"
-        source = "llm"
+        final_output = llm_response
+        source = llm_model
     else:
         final_output = fallback_output
         source = "fallback"
     return {
         "explanation": final_output,
+        "explanation_source": source,
         "current_agent": "explanation",
         "messages": state.messages
         + [{"role": "assistant", "content": final_output}],

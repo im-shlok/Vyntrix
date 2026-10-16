@@ -25,23 +25,47 @@ from app.rag.store import MemoryStore, connect_qdrant
 
 # Cosine floor for dense hits. bge-m3 puts genuinely related text well above
 # this and unrelated text below it; tunable because it depends on the model.
-MIN_DENSE_SCORE = float(os.getenv("RAG_MIN_DENSE_SCORE", "0.45"))
+# Cosine floor for dense hits, calibrated against the active embedding model.
+# Measured separation for nvidia/nemotron-3-embed-1b: correct matches land at
+# 0.41-0.66, same-domain-but-wrong at 0.21-0.30, off-domain at 0.06-0.09.
+# 0.35 sits in the gap. Re-measure if EMBED_MODEL changes.
+MIN_DENSE_SCORE = float(os.getenv("RAG_MIN_DENSE_SCORE", "0.35"))
 # Absolute and relative floors that together reject stopword-only BM25 matches.
 MIN_LEXICAL_SCORE = float(os.getenv("RAG_MIN_LEXICAL_SCORE", "1.0"))
 LEXICAL_RELATIVE_FLOOR = 0.15
 RRF_K = 60
+# Chunks allowed from any one source document. Without a cap, a long document
+# takes every slot with near-identical chunks and crowds out other sources.
+MAX_CHUNKS_PER_DOC = 2
 
 _TOKEN_RE = re.compile(r"\w+", re.UNICODE)
 
+# Function words carry no retrieval signal but still score under BM25 on a
+# small corpus, which is enough to make an off-topic query match something.
+_STOPWORDS = frozenset("""
+a an the and or but if then than that this these those there here
+i me my mine we us our you your he him his she her it its they them their
+is am are was were be been being do does did doing done have has had having
+can could should would will shall may might must
+of in on at to from by for with without about into over under again
+how what when where which who whom why whose
+not no nor so too very just only also any some all each both few more most
+other such own same as up down out off again once
+""".split())
 
-def tokenize(text: str) -> List[str]:
+
+def tokenize(text: str, drop_stopwords: bool = True) -> List[str]:
     """Unicode-aware tokenizer.
 
     `\\w` under re.UNICODE covers Devanagari, Gurmukhi, Tamil, Telugu, Kannada,
     Gujarati, Bengali, Malayalam and Odia, so Indic queries tokenize correctly
-    instead of collapsing to nothing.
+    instead of collapsing to nothing. Only English function words are dropped;
+    Indic tokens are left intact since they carry the signal.
     """
-    return _TOKEN_RE.findall(text.lower())
+    tokens = _TOKEN_RE.findall(text.lower())
+    if drop_stopwords:
+        return [token for token in tokens if token not in _STOPWORDS]
+    return tokens
 
 
 @dataclass
@@ -187,8 +211,9 @@ def retrieve(query: str, limit: int = 4, category: Optional[str] = None,
 
     documents = {document.id: document for document in get_corpus()}
 
-    # Over-fetch from each retriever so fusion has material to work with.
-    fetch = max(limit * 2, 8)
+    # Over-fetch from each retriever so fusion has material to work with, and
+    # so the per-document cap has alternatives to fall back on.
+    fetch = max(limit * 4, 16)
 
     dense_scores: Dict[str, float] = {}
     if _store is not None and _dense_ready:
@@ -225,11 +250,23 @@ def retrieve(query: str, limit: int = 4, category: Optional[str] = None,
         mode = "lexical"
 
     results = []
-    for doc_id in ordered[:limit]:
+    per_document: Dict[tuple, int] = {}
+    for doc_id in ordered:
+        if len(results) >= limit:
+            break
         document = documents.get(doc_id)
         if document is None:
             # Indexed under an earlier corpus version; skip rather than guess.
             continue
+
+        # Chunks of one markdown file share a title and source. Cap them so a
+        # single long document cannot occupy every slot.
+        key = (document.title, document.source)
+        taken = per_document.get(key, 0)
+        if taken >= MAX_CHUNKS_PER_DOC:
+            continue
+        per_document[key] = taken + 1
+
         results.append(RetrievedDoc(
             id=document.id,
             text=document.text,
@@ -244,6 +281,19 @@ def retrieve(query: str, limit: int = 4, category: Optional[str] = None,
             mode=mode,
         ))
     return results
+
+
+def dense_supported(documents: List[RetrievedDoc]) -> List[RetrievedDoc]:
+    """Keep only results the dense retriever agrees with, when it agreed with any.
+
+    BM25-only hits next to dense-confirmed ones are almost always matches on an
+    incidental word ("loan" inside a solar-pump scheme). Used wherever results
+    become a card or a reference the LLM is told to trust. In lexical-only mode
+    (no embedder) nothing has dense support, so everything is kept.
+    """
+    if any(document.dense_score > 0 for document in documents):
+        return [document for document in documents if document.dense_score > 0]
+    return documents
 
 
 def get_status() -> Dict:

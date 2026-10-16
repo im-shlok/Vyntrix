@@ -26,8 +26,6 @@ from app.core.llm_client import get_client, is_configured
 
 EMBED_MODEL = os.getenv("EMBED_MODEL", "nvidia/nemotron-3-embed-1b")
 
-# bge-m3 is asymmetric: documents and queries use different input types, and
-# mixing them up measurably degrades ranking quality.
 INPUT_TYPE_DOCUMENT = "passage"
 INPUT_TYPE_QUERY = "query"
 
