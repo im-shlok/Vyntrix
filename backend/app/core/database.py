@@ -172,6 +172,16 @@ def init_db():
                             f"{column_name} {column_type}"
                         )
                     )
+            # SQLite supports partial indexes, allowing the legacy unowned
+            # profile row(s) to remain NULL while enforcing one profile per
+            # authenticated user.
+            connection.execute(
+                text(
+                    "CREATE UNIQUE INDEX IF NOT EXISTS "
+                    "uq_farmer_profiles_user_id ON farmer_profiles(user_id) "
+                    "WHERE user_id IS NOT NULL"
+                )
+            )
 
     db = SessionLocal()
     try:
