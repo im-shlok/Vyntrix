@@ -1120,6 +1120,8 @@ export default function Dashboard() {
               <button
                 type="button"
                 aria-label="Open farm alerts"
+                aria-expanded={showNewsDropdown}
+                aria-controls="farm-alerts-panel"
                 onClick={async () => {
                   setShowNewsDropdown(!showNewsDropdown);
                   setShowNotificationAlert(false);
@@ -1137,29 +1139,30 @@ export default function Dashboard() {
 
               {/* Notification Dropdown Drawer Overlay */}
               {showNewsDropdown && (
-                <div className="absolute right-0 mt-3 w-80 bg-[#090d0a]/95 backdrop-blur-3xl border border-white/10 rounded-2xl shadow-[0_15px_40px_rgba(0,0,0,0.65)] p-4 z-50 text-left space-y-3">
-                  <div className="flex justify-between items-center border-b border-white/5 pb-2">
-                    <span className="text-[10px] font-mono font-bold text-emerald-450 uppercase tracking-wider flex items-center gap-1.5">
-                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping"></span>
-                      Agricultural Broadcasts
-                    </span>
+                <div id="farm-alerts-panel" className="notification-panel" role="dialog" aria-label="Agricultural broadcasts">
+                  <div className="notification-header">
+                    <div>
+                      <p className="notification-eyebrow"><span className="notification-live-dot" aria-hidden="true" />Agricultural broadcasts</p>
+                      <p className="notification-heading">Farm news and alerts</p>
+                    </div>
                     <button 
                       onClick={() => setShowNewsDropdown(false)}
-                      className="text-zinc-500 hover:text-white transition-colors cursor-pointer"
+                      className="notification-close"
+                      aria-label="Close farm alerts"
                     >
-                      <X size={12} />
+                      <X size={16} />
                     </button>
                   </div>
 
-                  <div className="max-h-64 overflow-y-auto space-y-2.5 pr-1 select-text">
+                  <div className="notification-list">
                     {loadingNews ? (
-                      <div className="py-8 text-center text-zinc-500 text-[10px] font-mono flex flex-col items-center gap-2">
-                        <div className="w-4 h-4 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin"></div>
-                        <span>Fetching live telemetry news...</span>
+                      <div className="notification-state">
+                        <div className="notification-spinner" aria-hidden="true" />
+                        <span>Loading farm news...</span>
                       </div>
                     ) : newsItems.length === 0 ? (
-                      <div className="py-8 text-center text-zinc-500 text-[10px] font-mono">
-                        No active broadcasts received.
+                      <div className="notification-state">
+                        No new farm alerts right now.
                       </div>
                     ) : (
                       newsItems.map((item, idx) => (
@@ -1168,27 +1171,28 @@ export default function Dashboard() {
                           href={item.link}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="block p-2.5 rounded-xl bg-white/[0.02] border border-white/5 hover:bg-white/[0.05] hover:border-emerald-500/20 transition-all group"
+                          className="notification-card"
                         >
-                          <div className="flex justify-between items-center gap-2 mb-1">
-                            <span className="text-[8px] font-mono font-bold text-emerald-400 bg-emerald-950/40 px-1.5 py-0.5 rounded border border-emerald-500/10">
+                          <div className="notification-card-meta">
+                            <span className="notification-source">
                               {item.source}
                             </span>
-                            <span className="text-[7.5px] text-zinc-500 font-mono">
+                            <span className="notification-date">
                               {item.pubDate ? new Date(item.pubDate).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) : ''}
                             </span>
                           </div>
-                          <h4 className="text-[10px] font-sans font-medium text-zinc-200 group-hover:text-white leading-snug line-clamp-2 transition-colors">
+                          <h4 className="notification-title">
                             {item.title}
                           </h4>
+                          <span className="notification-read-more">Read update <span aria-hidden="true">→</span></span>
                         </a>
                       ))
                     )}
                   </div>
 
-                  <div className="text-[7.5px] font-mono text-zinc-500 uppercase tracking-widest pt-2 border-t border-white/5 flex justify-between">
-                    <span>Google News RSS</span>
-                    <button onClick={fetchNews} className="text-emerald-400 hover:text-emerald-300 font-bold transition-all cursor-pointer">
+                  <div className="notification-footer">
+                    <span>Updated from Google News</span>
+                    <button onClick={fetchNews} className="notification-refresh">
                       Force Refresh
                     </button>
                   </div>
