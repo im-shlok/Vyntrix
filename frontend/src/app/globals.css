@@ -728,6 +728,189 @@ body {
   letter-spacing: -0.02em;
 }
 
+/* Today's priorities: a calm, scannable action list for the first screen. */
+.today-priorities {
+  border: 1px solid #cfe2d2;
+  border-radius: 1.25rem;
+  background: linear-gradient(145deg, #ffffff 0%, #f6fbf5 100%);
+  box-shadow: 0 10px 24px rgba(42, 86, 53, 0.08);
+  overflow: hidden;
+}
+
+.today-priorities-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1.1rem 1.25rem;
+  border-bottom: 1px solid #deebdf;
+}
+
+.today-priorities-icon {
+  display: grid;
+  width: 2.75rem;
+  height: 2.75rem;
+  flex: 0 0 auto;
+  place-items: center;
+  border: 1px solid #b9ddc1;
+  border-radius: 0.9rem;
+  background: #e8f6e9;
+  color: #1e7a4b;
+}
+
+.today-priorities-title {
+  margin: 0;
+  color: #17382b;
+  font-size: 1.05rem;
+  font-weight: 850;
+  letter-spacing: -0.015em;
+}
+
+.today-priorities-subtitle {
+  margin: 0.25rem 0 0;
+  color: #5c7463;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.today-priorities-count {
+  flex: 0 0 auto;
+  padding: 0.45rem 0.7rem;
+  border: 1px solid #b9ddc1;
+  border-radius: 999px;
+  background: #edf8ed;
+  color: #176b43;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+
+.today-priorities-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.7rem;
+  padding: 1rem 1.25rem 1.25rem;
+}
+
+.today-priority-item {
+  display: flex;
+  min-height: 4.25rem;
+  align-items: center;
+  gap: 0.7rem;
+  padding: 0.8rem;
+  border: 1px solid #d8e8d9;
+  border-radius: 1rem;
+  background: #fbfefb;
+  color: #254a35;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 160ms ease, background-color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
+}
+
+.today-priority-item:hover {
+  border-color: #9cccaa;
+  background: #f2faf2;
+  box-shadow: 0 6px 14px rgba(42, 86, 53, 0.08);
+  transform: translateY(-1px);
+}
+
+.today-priority-item:focus-visible {
+  outline: 3px solid rgba(226, 164, 49, 0.72);
+  outline-offset: 2px;
+}
+
+.today-priority-number {
+  display: grid;
+  width: 1.55rem;
+  height: 1.55rem;
+  flex: 0 0 auto;
+  place-items: center;
+  border-radius: 50%;
+  background: #e7f3e8;
+  color: #24734b;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.7rem;
+  font-weight: 850;
+}
+
+.today-priority-item-icon {
+  display: grid;
+  width: 2rem;
+  height: 2rem;
+  flex: 0 0 auto;
+  place-items: center;
+  border-radius: 0.65rem;
+  background: #eef8ee;
+  color: #2c8c59;
+}
+
+.today-priority-item:nth-child(2) .today-priority-item-icon {
+  background: #fff5df;
+  color: #a87518;
+}
+
+.today-priority-item:nth-child(3) .today-priority-item-icon {
+  background: #f8edf5;
+  color: #9c4b77;
+}
+
+.today-priority-item:nth-child(4) .today-priority-item-icon {
+  background: #edf3fb;
+  color: #3970a7;
+}
+
+.today-priority-copy {
+  min-width: 0;
+  flex: 1 1 auto;
+  font-size: 1rem;
+  font-weight: 750;
+  line-height: 1.4;
+}
+
+.today-priority-action {
+  flex: 0 0 auto;
+  color: #66806d;
+  font-size: 0.68rem;
+  font-weight: 750;
+  white-space: nowrap;
+}
+
+.today-priority-item.is-complete {
+  border-color: #a8d3af;
+  background: #eef9ef;
+}
+
+.today-priority-item.is-complete .today-priority-copy {
+  color: #5f8068;
+  text-decoration: line-through;
+  text-decoration-color: #75a77f;
+}
+
+.today-priority-item.is-complete .today-priority-number {
+  background: #2d8b57;
+  color: #ffffff;
+}
+
+.today-priority-item.is-complete .today-priority-action {
+  color: #207a49;
+}
+
+@media (max-width: 700px) {
+  .today-priorities-list {
+    grid-template-columns: 1fr;
+    padding: 0.85rem;
+  }
+
+  .today-priorities-header {
+    align-items: flex-start;
+    padding: 1rem;
+  }
+
+  .today-priorities-subtitle {
+    max-width: 15rem;
+  }
+}
+
 /* Advice workspace: warm, readable surfaces instead of a wall of terminal green. */
 .farmer-dashboard .advisory-output-panel {
   background: linear-gradient(145deg, #fffef9 0%, #f7fbf5 100%) !important;

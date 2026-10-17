@@ -24,7 +24,12 @@ import {
   Layers,
   TrendingUp,
   AlertTriangle,
-  Info
+  Info,
+  Droplets,
+  CloudRain,
+  Leaf,
+  ClipboardCheck,
+  ListChecks
 } from 'lucide-react';
 import FarmMap from '@/components/dashboard/FarmMap';
 import VoiceAssistant from '@/components/dashboard/VoiceAssistant';
@@ -449,6 +454,149 @@ export default function Dashboard() {
     or: { advice: "ଫସଲ ପରାମର୍ଶ ନିଅନ୍ତୁ", adviceDesc: "କୁହନ୍ତୁ, ଟାଇପ୍ କରନ୍ତୁ କିମ୍ବା ପତ୍ରର ଫଟୋ ଅପଲୋଡ୍ କରନ୍ତୁ", price: "ଆଜିର ଦର ଦେଖନ୍ତୁ", priceDesc: "ନିକଟସ୍ଥ ମଣ୍ଡି ଦର ତୁଳନା କରନ୍ତୁ", details: "ଚାଷ ଜମିର ବିବରଣୀ ଅପଡେଟ୍ କରନ୍ତୁ", detailsDesc: "ଆପଣଙ୍କ ଜମି ପାଇଁ ସଠିକ୍ ପରାମର୍ଶ ପାଆନ୍ତୁ" }
   };
   const quickAction = quickActions[activeLanguage] || quickActions.en;
+  const todayPriorities: Record<string, {
+    title: string;
+    subtitle: string;
+    complete: string;
+    completed: string;
+    items: string[];
+  }> = {
+    en: {
+      title: "Today's priorities",
+      subtitle: "Small actions that protect your crop and income.",
+      complete: "Mark done",
+      completed: "Done",
+      items: [
+        "Irrigate before 8:00 AM",
+        "Do not spray — rain expected tomorrow",
+        "Inspect lower tomato leaves",
+        "Record fertilizer application"
+      ]
+    },
+    hi: {
+      title: "आज की प्राथमिकताएँ",
+      subtitle: "छोटे काम जो आपकी फसल और कमाई की रक्षा करते हैं।",
+      complete: "पूरा करें",
+      completed: "पूरा हुआ",
+      items: [
+        "सुबह 8:00 बजे से पहले सिंचाई करें",
+        "दवा का छिड़काव न करें — कल बारिश की संभावना है",
+        "टमाटर की निचली पत्तियों की जाँच करें",
+        "खाद डालने की जानकारी दर्ज करें"
+      ]
+    },
+    pa: {
+      title: "ਅੱਜ ਦੀਆਂ ਤਰਜੀਹਾਂ",
+      subtitle: "ਛੋਟੇ ਕੰਮ ਜੋ ਤੁਹਾਡੀ ਫਸਲ ਅਤੇ ਕਮਾਈ ਦੀ ਰੱਖਿਆ ਕਰਦੇ ਹਨ।",
+      complete: "ਪੂਰਾ ਕਰੋ",
+      completed: "ਪੂਰਾ ਹੋਇਆ",
+      items: [
+        "ਸਵੇਰੇ 8:00 ਵਜੇ ਤੋਂ ਪਹਿਲਾਂ ਸਿੰਚਾਈ ਕਰੋ",
+        "ਛਿੜਕਾਅ ਨਾ ਕਰੋ — ਕੱਲ੍ਹ ਮੀਂਹ ਦੀ ਉਮੀਦ ਹੈ",
+        "ਟਮਾਟਰ ਦੇ ਹੇਠਲੇ ਪੱਤਿਆਂ ਦੀ ਜਾਂਚ ਕਰੋ",
+        "ਖਾਦ ਪਾਉਣ ਦੀ ਜਾਣਕਾਰੀ ਦਰਜ ਕਰੋ"
+      ]
+    },
+    mr: {
+      title: "आजची महत्त्वाची कामे",
+      subtitle: "तुमचे पीक आणि उत्पन्न सुरक्षित ठेवणारी छोटी कामे.",
+      complete: "पूर्ण करा",
+      completed: "पूर्ण झाले",
+      items: [
+        "सकाळी 8:00 पूर्वी सिंचन करा",
+        "फवारणी करू नका — उद्या पावसाची शक्यता आहे",
+        "टोमॅटोच्या खालच्या पानांची तपासणी करा",
+        "खताचा वापर नोंदवा"
+      ]
+    },
+    te: {
+      title: "ఈరోజు చేయాల్సిన పనులు",
+      subtitle: "మీ పంటను మరియు ఆదాయాన్ని కాపాడే చిన్న పనులు.",
+      complete: "పూర్తి చేయండి",
+      completed: "పూర్తయింది",
+      items: [
+        "ఉదయం 8:00 గంటలకు ముందు నీరు పెట్టండి",
+        "పిచికారీ చేయవద్దు — రేపు వర్షం వచ్చే అవకాశం ఉంది",
+        "టమాటా దిగువ ఆకులను పరిశీలించండి",
+        "ఎరువుల వాడకాన్ని నమోదు చేయండి"
+      ]
+    },
+    ta: {
+      title: "இன்றைய முக்கிய பணிகள்",
+      subtitle: "உங்கள் பயிரையும் வருமானத்தையும் பாதுகாக்கும் சிறிய பணிகள்.",
+      complete: "முடிந்தது எனக் குறிக்கவும்",
+      completed: "முடிந்தது",
+      items: [
+        "காலை 8:00 மணிக்கு முன் நீர் பாய்ச்சுங்கள்",
+        "தெளிக்க வேண்டாம் — நாளை மழை எதிர்பார்க்கப்படுகிறது",
+        "தக்காளியின் கீழ் இலைகளைப் பாருங்கள்",
+        "உரமிட்டதைப் பதிவு செய்யுங்கள்"
+      ]
+    },
+    kn: {
+      title: "ಇಂದಿನ ಆದ್ಯತೆಗಳು",
+      subtitle: "ನಿಮ್ಮ ಬೆಳೆ ಮತ್ತು ಆದಾಯವನ್ನು ರಕ್ಷಿಸುವ ಸಣ್ಣ ಕೆಲಸಗಳು.",
+      complete: "ಮುಗಿದಿದೆ ಎಂದು ಗುರುತಿಸಿ",
+      completed: "ಮುಗಿದಿದೆ",
+      items: [
+        "ಬೆಳಿಗ್ಗೆ 8:00 ಗಂಟೆಗೆ ಮೊದಲು ನೀರು ಹಾಯಿಸಿ",
+        "ಸಿಂಪಡಣೆ ಮಾಡಬೇಡಿ — ನಾಳೆ ಮಳೆಯ ನಿರೀಕ್ಷೆಯಿದೆ",
+        "ಟೊಮೇಟೊದ ಕೆಳಗಿನ ಎಲೆಗಳನ್ನು ಪರಿಶೀಲಿಸಿ",
+        "ರಸಗೊಬ್ಬರ ಬಳಕೆಯನ್ನು ದಾಖಲಿಸಿ"
+      ]
+    },
+    gu: {
+      title: "આજની પ્રાથમિકતાઓ",
+      subtitle: "તમારા પાક અને આવકને સુરક્ષિત રાખતાં નાના કામો.",
+      complete: "પૂર્ણ કરો",
+      completed: "પૂર્ણ થયું",
+      items: [
+        "સવારે 8:00 વાગ્યા પહેલાં સિંચાઈ કરો",
+        "છંટકાવ ન કરો — આવતીકાલે વરસાદની શક્યતા છે",
+        "ટામેટાના નીચેના પાંદડાં તપાસો",
+        "ખાતર નાખવાની નોંધ કરો"
+      ]
+    },
+    bn: {
+      title: "আজকের অগ্রাধিকার",
+      subtitle: "আপনার ফসল ও আয় রক্ষার ছোট ছোট কাজ।",
+      complete: "সম্পন্ন হিসেবে চিহ্নিত করুন",
+      completed: "সম্পন্ন",
+      items: [
+        "সকাল ৮টার আগে সেচ দিন",
+        "স্প্রে করবেন না — আগামীকাল বৃষ্টির সম্ভাবনা আছে",
+        "টমেটোর নিচের পাতাগুলি পরীক্ষা করুন",
+        "সার প্রয়োগের তথ্য লিখে রাখুন"
+      ]
+    },
+    ml: {
+      title: "ഇന്നത്തെ മുൻഗണനകൾ",
+      subtitle: "നിങ്ങളുടെ വിളയും വരുമാനവും സംരക്ഷിക്കുന്ന ചെറിയ ജോലികൾ.",
+      complete: "പൂർത്തിയാക്കുക",
+      completed: "പൂർത്തിയായി",
+      items: [
+        "രാവിലെ 8:00 മണിക്ക് മുമ്പ് നനയ്ക്കുക",
+        "സ്പ്രേ ചെയ്യരുത് — നാളെ മഴ പ്രതീക്ഷിക്കുന്നു",
+        "തക്കാളിയുടെ താഴത്തെ ഇലകൾ പരിശോധിക്കുക",
+        "വളം നൽകിയ വിവരം രേഖപ്പെടുത്തുക"
+      ]
+    },
+    or: {
+      title: "ଆଜିର ପ୍ରାଥମିକତା",
+      subtitle: "ଆପଣଙ୍କ ଫସଲ ଓ ଆୟକୁ ସୁରକ୍ଷା ଦେଉଥିବା ଛୋଟ କାମ।",
+      complete: "ସମାପ୍ତ ବୋଲି ଚିହ୍ନଟ କରନ୍ତୁ",
+      completed: "ସମାପ୍ତ",
+      items: [
+        "ସକାଳ 8:00 ପୂର୍ବରୁ ଜଳସେଚନ କରନ୍ତୁ",
+        "ସ୍ପ୍ରେ କରନ୍ତୁ ନାହିଁ — ଆସନ୍ତାକାଲି ବର୍ଷାର ସମ୍ଭାବନା ଅଛି",
+        "ଟମାଟୋର ତଳ ପତ୍ରଗୁଡ଼ିକ ଯାଞ୍ଚ କରନ୍ତୁ",
+        "ସାର ପ୍ରୟୋଗର ରେକର୍ଡ ରଖନ୍ତୁ"
+      ]
+    }
+  };
+  const priorityCopy = todayPriorities[activeLanguage] || todayPriorities.en;
+  const [completedPriorities, setCompletedPriorities] = useState<Record<number, boolean>>({});
+  const priorityIcons = [Droplets, CloudRain, Leaf, ClipboardCheck];
 
   // Authenticate session on load
   useEffect(() => {
@@ -1122,7 +1270,7 @@ export default function Dashboard() {
                })()}
 
                {/* Large, plain-language shortcuts for common farm tasks */}
-               <div className="col-span-12 grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div className="col-span-12 grid grid-cols-1 sm:grid-cols-3 gap-3">
                  <button
                    type="button"
                    onClick={() => setActiveTab("diagnostics")}
@@ -1160,10 +1308,49 @@ export default function Dashboard() {
                      <span className="block text-sm font-extrabold text-emerald-950">{quickAction.details}</span>
                      <span className="block text-xs text-zinc-500 mt-0.5">{quickAction.detailsDesc}</span>
                    </span>
-                 </Link>
-               </div>
+                  </Link>
+                </div>
 
-               {/* Left Column (sliders and metrics) */}
+                {/* Plain-language action list for today's farm work */}
+                <section className="today-priorities col-span-12 text-left" aria-labelledby="today-priorities-title">
+                  <div className="today-priorities-header">
+                    <div className="flex items-start gap-3">
+                      <span className="today-priorities-icon" aria-hidden="true">
+                        <ListChecks size={20} />
+                      </span>
+                      <div>
+                        <h2 id="today-priorities-title" className="today-priorities-title">{priorityCopy.title}</h2>
+                        <p className="today-priorities-subtitle">{priorityCopy.subtitle}</p>
+                      </div>
+                    </div>
+                    <span className="today-priorities-count" role="status" aria-live="polite">
+                      {Object.values(completedPriorities).filter(Boolean).length}/{priorityCopy.items.length}
+                    </span>
+                  </div>
+
+                  <div className="today-priorities-list">
+                    {priorityCopy.items.map((item, index) => {
+                      const Icon = priorityIcons[index];
+                      const isComplete = Boolean(completedPriorities[index]);
+                      return (
+                        <button
+                          key={`${activeLanguage}-${index}`}
+                          type="button"
+                          className={`today-priority-item${isComplete ? ' is-complete' : ''}`}
+                          onClick={() => setCompletedPriorities((current) => ({ ...current, [index]: !current[index] }))}
+                          aria-pressed={isComplete}
+                        >
+                          <span className="today-priority-number" aria-hidden="true">{index + 1}</span>
+                          <span className="today-priority-item-icon" aria-hidden="true"><Icon size={18} /></span>
+                          <span className="today-priority-copy">{item}</span>
+                          <span className="today-priority-action">{isComplete ? priorityCopy.completed : priorityCopy.complete}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </section>
+
+                {/* Left Column (sliders and metrics) */}
               <div className="lg:col-span-4 flex flex-col space-y-4">
                 
                 {/* Farmer Profile Memory Card */}
