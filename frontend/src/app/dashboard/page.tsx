@@ -520,17 +520,18 @@ export default function Dashboard() {
             }
           });
           if (data && active) {
-          setAgentOutput(data);
-          if (data.explanation) {
-            queueExplanation(data.explanation);
-          }
-          if (data.soil_data) {
-            setTelemetry({
-              soil_moisture: data.soil_data.moisture,
-              soil_ph: data.soil_data.ph,
-              temperature: data.weather_info?.temperature || telemetry.temperature
-            });
-          }
+          // This request refreshes dashboard telemetry only. It must not replace
+          // the farmer's current advice with a diagnostic status response.
+          setTelemetry((current: Record<string, number>) => ({
+            ...current,
+            ...(data.soil_data?.moisture !== undefined && { soil_moisture: data.soil_data.moisture }),
+            ...(data.soil_data?.ph !== undefined && { soil_ph: data.soil_data.ph }),
+            ...(data.soil_data?.nitrogen !== undefined && { nitrogen: data.soil_data.nitrogen }),
+            ...(data.soil_data?.phosphorus !== undefined && { phosphorus: data.soil_data.phosphorus }),
+            ...(data.soil_data?.potassium !== undefined && { potassium: data.soil_data.potassium }),
+            ...(data.weather_info?.temperature !== undefined && { temperature: data.weather_info.temperature }),
+            ...(data.weather_info?.humidity !== undefined && { humidity: data.weather_info.humidity }),
+          }));
         }
       } catch (e) {
         console.error("Initial agent load error:", e);
@@ -1422,21 +1423,6 @@ export default function Dashboard() {
                       <span className="text-sm font-extrabold text-emerald-900 tracking-tight">{d.advisoryHeader}</span>
                       <span className="text-xs font-bold uppercase tracking-wider">{isTypingAdvice ? 'WRITING ADVICE...' : d.advisorySub}</span>
                     </div>
-
-                    {/* Live Visual Routing Chain Graph */}
-                    {agentOutput?.execution_plan && (
-                      <div className="advisory-route flex flex-wrap items-center gap-1 p-2.5 rounded-2xl mb-3 text-[7.5px] font-mono font-bold uppercase shrink-0 select-none">
-                        <span className="text-zinc-500 mr-1">ROUTE:</span>
-                        {agentOutput.execution_plan.map((step: string, sIdx: number) => (
-                          <React.Fragment key={sIdx}>
-                            {sIdx > 0 && <span className="advisory-route-arrow">➜</span>}
-                            <span className="advisory-route-step px-1.5 py-0.5 rounded-lg tracking-wider">
-                              {step}
-                            </span>
-                          </React.Fragment>
-                        ))}
-                      </div>
-                    )}
 
                     <div className="advisory-response text-xs leading-relaxed font-medium space-y-3 select-text flex-1" aria-live="polite">
                       {explanationText.startsWith("[INIT]") ? (

@@ -743,22 +743,6 @@ body {
   color: #24734b;
 }
 
-.farmer-dashboard .advisory-route {
-  background: #f1f8f1;
-  border: 1px solid #d5e8d6;
-  color: #637b6a;
-}
-
-.farmer-dashboard .advisory-route-arrow {
-  color: #78a984;
-}
-
-.farmer-dashboard .advisory-route-step {
-  border: 1px solid #a9d2b3;
-  background: #e5f4e7;
-  color: #1d7448;
-}
-
 .farmer-dashboard .advisory-response {
   color: #304f3e;
 }
