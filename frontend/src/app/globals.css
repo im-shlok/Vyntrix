@@ -728,6 +728,156 @@ body {
   letter-spacing: -0.02em;
 }
 
+/* Advice workspace: warm, readable surfaces instead of a wall of terminal green. */
+.farmer-dashboard .advisory-output-panel {
+  background: linear-gradient(145deg, #fffef9 0%, #f7fbf5 100%) !important;
+  border: 1px solid #cfe1d2 !important;
+  box-shadow: 0 16px 32px rgba(42, 86, 53, 0.1);
+}
+
+.farmer-dashboard .advisory-output-header {
+  border-bottom: 1px solid #dce9dc;
+}
+
+.farmer-dashboard .advisory-output-header > span:last-child {
+  color: #24734b;
+}
+
+.farmer-dashboard .advisory-route {
+  background: #f1f8f1;
+  border: 1px solid #d5e8d6;
+  color: #637b6a;
+}
+
+.farmer-dashboard .advisory-route-arrow {
+  color: #78a984;
+}
+
+.farmer-dashboard .advisory-route-step {
+  border: 1px solid #a9d2b3;
+  background: #e5f4e7;
+  color: #1d7448;
+}
+
+.farmer-dashboard .advisory-response {
+  color: #304f3e;
+}
+
+.farmer-dashboard .advisory-empty-state {
+  border: 1px solid #d6ead8;
+  background: #eef8ed;
+  color: #1e5b3a;
+}
+
+.farmer-dashboard .advisory-empty-state .text-zinc-600 {
+  color: #557564 !important;
+}
+
+.farmer-dashboard .advisory-bullet-group {
+  border: 1px solid #d8e9d9;
+  background: #f3faf2;
+  color: #365945;
+}
+
+.farmer-dashboard .advisory-bullet > span {
+  color: #2b9a5e;
+}
+
+.farmer-dashboard .advisory-bullet strong,
+.farmer-dashboard .advisory-paragraph strong {
+  color: #176b43;
+}
+
+.farmer-dashboard .advisory-paragraph {
+  color: #315d45;
+}
+
+.farmer-dashboard .advisory-diagnostics {
+  border-color: #dce8dd;
+}
+
+.farmer-dashboard .advisory-diagnostics-label {
+  color: #9a4c78;
+}
+
+.farmer-dashboard .advisory-agent-card {
+  color: #355344;
+  border: 1px solid;
+  box-shadow: 0 5px 12px rgba(38, 76, 47, 0.05);
+}
+
+.farmer-dashboard .advisory-agent-card--vision {
+  border-color: #edc9dc;
+  background: #fff4fa;
+}
+
+.farmer-dashboard .advisory-agent-card--vision > span,
+.farmer-dashboard .advisory-agent-card--vision .text-emerald-400 {
+  color: #a24873 !important;
+}
+
+.farmer-dashboard .advisory-agent-card--weather {
+  border-color: #c5e2e7;
+  background: #f1fbfc;
+}
+
+.farmer-dashboard .advisory-agent-card--weather > span,
+.farmer-dashboard .advisory-agent-card--weather .text-amber-400 {
+  color: #18778b !important;
+}
+
+.farmer-dashboard .advisory-agent-card--soil {
+  border-color: #bfe0c6;
+  background: #f1fbf2;
+}
+
+.farmer-dashboard .advisory-agent-card--soil > span,
+.farmer-dashboard .advisory-agent-card--soil .text-emerald-400 {
+  color: #207a49 !important;
+}
+
+.farmer-dashboard .advisory-agent-card--market {
+  border-color: #ead9ae;
+  background: #fffaf0;
+}
+
+.farmer-dashboard .advisory-agent-card--market > span,
+.farmer-dashboard .advisory-agent-card--market .text-amber-400 {
+  color: #926b13 !important;
+}
+
+.farmer-dashboard .advisory-agent-card .text-white {
+  color: #244a35 !important;
+}
+
+.farmer-dashboard .advisory-agent-card .text-zinc-300,
+.farmer-dashboard .advisory-agent-card .text-zinc-400 {
+  color: #587363 !important;
+}
+
+.farmer-dashboard .advisory-note {
+  border: 1px solid #d6e8d7;
+  background: #edf8ed;
+  color: #326346;
+}
+
+.farmer-dashboard .advisory-caret {
+  display: inline-block;
+  margin-left: 0.15rem;
+  color: #2b9a5e;
+  animation: advisory-caret-blink 0.9s step-end infinite;
+}
+
+@keyframes advisory-caret-blink {
+  50% { opacity: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .farmer-dashboard .advisory-caret {
+    animation: none;
+  }
+}
+
 /* The original UI uses a few custom Tailwind-like names. Keep them visible and consistent. */
 .text-emerald-450 { color: #18794c !important; }
 .text-fuchsia-450 { color: #a24873 !important; }
