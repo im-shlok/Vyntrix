@@ -360,11 +360,11 @@ export default function VisionAnalysis({ onAnalyzeComplete, activeLanguage }: Vi
                   </div>
 
                   {/* Immediate Remedy Container */}
-                  <div className="bg-[#030504]/90 border border-red-500/10 rounded-xl p-3.5 flex items-start gap-3 shadow-sm">
-                    <AlertTriangle className="text-red-500 shrink-0 mt-0.5" size={14} />
+                  <div className="vision-remedy-box rounded-xl p-3.5 flex items-start gap-3 shadow-sm">
+                    <AlertTriangle className="vision-remedy-icon shrink-0 mt-0.5" size={14} />
                     <div className="space-y-0.5">
-                      <span className="text-[8px] font-bold text-red-400 block uppercase tracking-widest">{t.remedy}</span>
-                      <p className="text-xs text-zinc-350 font-sans font-medium leading-relaxed select-text">{det.remedy}</p>
+                      <span className="vision-remedy-label text-[8px] font-bold block uppercase tracking-widest">{t.remedy}</span>
+                      <p className="vision-remedy-copy text-xs font-sans font-medium leading-relaxed select-text">{det.remedy}</p>
                     </div>
                   </div>
                 </div>

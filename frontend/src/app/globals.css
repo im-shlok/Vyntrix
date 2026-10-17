@@ -852,6 +852,24 @@ body {
   animation: advisory-caret-blink 0.9s step-end infinite;
 }
 
+/* Leaf diagnosis remedy: warm warning surface with dark readable body copy. */
+.farmer-dashboard .vision-remedy-box {
+  background: #fff7e8 !important;
+  border: 1px solid #efd29b !important;
+}
+
+.farmer-dashboard .vision-remedy-icon {
+  color: #bb6b18 !important;
+}
+
+.farmer-dashboard .vision-remedy-label {
+  color: #955713 !important;
+}
+
+.farmer-dashboard .vision-remedy-copy {
+  color: #4f4a3f !important;
+}
+
 @keyframes advisory-caret-blink {
   50% { opacity: 0; }
 }
