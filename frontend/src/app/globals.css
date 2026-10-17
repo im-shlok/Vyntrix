@@ -728,6 +728,101 @@ body {
   letter-spacing: -0.02em;
 }
 
+.farmer-dashboard .dashboard-footer {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin: 1.5rem 1rem 1rem;
+  padding: 0.85rem 1rem;
+  overflow: hidden;
+  border: 1px solid #cfe1d2;
+  border-radius: 1.1rem;
+  background: linear-gradient(110deg, #ffffff 0%, #f6fbf5 100%);
+  box-shadow: 0 8px 20px rgba(42, 86, 53, 0.07);
+}
+
+.farmer-dashboard .dashboard-footer::before {
+  position: absolute;
+  inset: 0 0 auto;
+  height: 3px;
+  background: linear-gradient(90deg, #16804b, #4da6bd, #a24873);
+  content: "";
+}
+
+.farmer-dashboard .dashboard-footer-statuses {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.farmer-dashboard .dashboard-footer-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.4rem 0.65rem;
+  border: 1px solid;
+  border-radius: 999px;
+  font-size: 0.73rem;
+  font-weight: 750;
+  white-space: nowrap;
+}
+
+.farmer-dashboard .dashboard-footer-status--green {
+  border-color: #b9ddc2;
+  background: #edf9ef;
+  color: #176b43;
+}
+
+.farmer-dashboard .dashboard-footer-status--blue {
+  border-color: #bddde4;
+  background: #edf8fb;
+  color: #18778b;
+}
+
+.farmer-dashboard .dashboard-footer-status--purple {
+  border-color: #e0c7dc;
+  background: #fbf1f8;
+  color: #8b4a78;
+}
+
+.farmer-dashboard .dashboard-footer-dot {
+  width: 0.45rem;
+  height: 0.45rem;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.farmer-dashboard .dashboard-footer-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  color: #607568;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.72rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.farmer-dashboard .dashboard-footer-divider {
+  color: #b3c6b6;
+}
+
+@media (max-width: 700px) {
+  .farmer-dashboard .dashboard-footer {
+    align-items: flex-start;
+    flex-direction: column;
+    margin-right: 0.75rem;
+    margin-left: 0.75rem;
+  }
+
+  .farmer-dashboard .dashboard-footer-meta {
+    flex-wrap: wrap;
+    white-space: normal;
+  }
+}
+
 /* Today's priorities: a calm, scannable action list for the first screen. */
 .today-priorities {
   border: 1px solid #cfe2d2;

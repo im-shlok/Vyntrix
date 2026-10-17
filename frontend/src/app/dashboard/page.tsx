@@ -1758,27 +1758,26 @@ export default function Dashboard() {
 
         </main>
 
-        {/* Footer (Floating Capsule Design) */}
-        <footer className="farmer-panel mx-4 mb-4 mt-6 p-4 bg-white/90 border border-emerald-900/10 rounded-2xl shrink-0 flex flex-col md:flex-row justify-between items-center gap-4 backdrop-blur-md text-xs text-zinc-450 select-none shadow-[0_0_20px_rgba(32,79,51,0.08)] relative z-10 text-left">
-          <div className="flex flex-wrap items-center justify-center gap-3">
-            <span className="flex items-center gap-1.5 text-emerald-450 font-bold bg-emerald-950/45 px-2.5 py-1 rounded-xl border border-emerald-500/10">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping"></span>
-               Connection ready
+        {/* Footer */}
+        <footer className="dashboard-footer" aria-label="Agriva service status">
+          <div className="dashboard-footer-statuses" aria-label="Service status">
+            <span className="dashboard-footer-status dashboard-footer-status--green">
+              <span className="dashboard-footer-dot" aria-hidden="true" />
+              Connection ready
             </span>
-            <span className="flex items-center gap-1.5 text-cyan-400 font-bold bg-cyan-950/45 px-2.5 py-1 rounded-xl border border-cyan-500/10">
-              <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse"></span>
-               Live farm data
+            <span className="dashboard-footer-status dashboard-footer-status--blue">
+              <span className="dashboard-footer-dot" aria-hidden="true" />
+              Live farm data
             </span>
-            <span className="flex items-center gap-1.5 text-fuchsia-400 font-bold bg-fuchsia-950/45 px-2.5 py-1 rounded-xl border border-fuchsia-500/10">
-              <span className="w-1.5 h-1.5 rounded-full bg-fuchsia-400 animate-pulse"></span>
-               Your data is private
+            <span className="dashboard-footer-status dashboard-footer-status--purple">
+              <span className="dashboard-footer-dot" aria-hidden="true" />
+              Your data is private
             </span>
           </div>
-          <div className="flex flex-col md:flex-row items-center gap-2 md:gap-4 text-center md:text-right">
-            <span className="text-zinc-500">© 2026 Agriva </span>
-            <span className="text-emerald-400 font-extrabold uppercase bg-black/60 px-2 py-0.5 rounded border border-white/5">
-               Agriva farm assistant
-            </span>
+          <div className="dashboard-footer-meta">
+            <span>© 2026 Agriva</span>
+            <span className="dashboard-footer-divider" aria-hidden="true">•</span>
+            <span>Farm assistant</span>
           </div>
         </footer>
 
