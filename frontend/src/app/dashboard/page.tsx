@@ -597,6 +597,28 @@ export default function Dashboard() {
   const priorityCopy = todayPriorities[activeLanguage] || todayPriorities.en;
   const [completedPriorities, setCompletedPriorities] = useState<Record<number, boolean>>({});
   const priorityIcons = [Droplets, CloudRain, Leaf, ClipboardCheck];
+  const notificationCopy: Record<string, {
+    eyebrow: string;
+    heading: string;
+    loading: string;
+    empty: string;
+    read: string;
+    updated: string;
+    refresh: string;
+  }> = {
+    en: { eyebrow: "Agricultural broadcasts", heading: "Farm news and alerts", loading: "Loading farm news...", empty: "No new farm alerts right now.", read: "Read update", updated: "Updated from Google News", refresh: "Refresh" },
+    hi: { eyebrow: "कृषि समाचार", heading: "खेत की खबरें और चेतावनियाँ", loading: "खेत की खबरें लोड हो रही हैं...", empty: "अभी कोई नई खेत चेतावनी नहीं है।", read: "खबर पढ़ें", updated: "Google News से अपडेट", refresh: "फिर से लोड करें" },
+    pa: { eyebrow: "ਖੇਤੀਬਾੜੀ ਖ਼ਬਰਾਂ", heading: "ਖੇਤ ਦੀਆਂ ਖ਼ਬਰਾਂ ਅਤੇ ਚੇਤਾਵਨੀਆਂ", loading: "ਖੇਤ ਦੀਆਂ ਖ਼ਬਰਾਂ ਲੋਡ ਹੋ ਰਹੀਆਂ ਹਨ...", empty: "ਇਸ ਵੇਲੇ ਕੋਈ ਨਵੀਂ ਖੇਤੀ ਚੇਤਾਵਨੀ ਨਹੀਂ ਹੈ।", read: "ਖ਼ਬਰ ਪੜ੍ਹੋ", updated: "Google News ਤੋਂ ਅੱਪਡੇਟ", refresh: "ਤਾਜ਼ਾ ਕਰੋ" },
+    mr: { eyebrow: "कृषी बातम्या", heading: "शेतातील बातम्या आणि सूचना", loading: "शेतातील बातम्या लोड होत आहेत...", empty: "सध्या कोणतीही नवीन शेत सूचना नाही.", read: "बातमी वाचा", updated: "Google News कडून अपडेट", refresh: "पुन्हा लोड करा" },
+    te: { eyebrow: "వ్యవసాయ వార్తలు", heading: "పొలం వార్తలు మరియు హెచ్చరికలు", loading: "పొలం వార్తలు లోడ్ అవుతున్నాయి...", empty: "ప్రస్తుతం కొత్త వ్యవసాయ హెచ్చరికలు లేవు.", read: "వార్త చదవండి", updated: "Google News నుండి అప్‌డేట్", refresh: "రిఫ్రెష్ చేయండి" },
+    ta: { eyebrow: "விவசாய செய்திகள்", heading: "பண்ணை செய்திகள் மற்றும் எச்சரிக்கைகள்", loading: "பண்ணை செய்திகள் ஏற்றப்படுகின்றன...", empty: "இப்போது புதிய பண்ணை எச்சரிக்கைகள் இல்லை.", read: "செய்தியைப் படிக்கவும்", updated: "Google News புதுப்பிப்பு", refresh: "புதுப்பிக்கவும்" },
+    kn: { eyebrow: "ಕೃಷಿ ಸುದ್ದಿಗಳು", heading: "ಹೊಲದ ಸುದ್ದಿ ಮತ್ತು ಎಚ್ಚರಿಕೆಗಳು", loading: "ಹೊಲದ ಸುದ್ದಿಗಳನ್ನು ಲೋಡ್ ಮಾಡಲಾಗುತ್ತಿದೆ...", empty: "ಈಗ ಯಾವುದೇ ಹೊಸ ಕೃಷಿ ಎಚ್ಚರಿಕೆಗಳಿಲ್ಲ.", read: "ಸುದ್ದಿ ಓದಿ", updated: "Google News ನಿಂದ ನವೀಕರಣ", refresh: "ರಿಫ್ರೆಶ್ ಮಾಡಿ" },
+    gu: { eyebrow: "કૃષિ સમાચાર", heading: "ખેતરના સમાચાર અને ચેતવણીઓ", loading: "ખેતરના સમાચાર લોડ થઈ રહ્યા છે...", empty: "હમણાં કોઈ નવી ખેતી ચેતવણી નથી.", read: "સમાચાર વાંચો", updated: "Google News પરથી અપડેટ", refresh: "ફરી લોડ કરો" },
+    bn: { eyebrow: "কৃষি সংবাদ", heading: "খেতের খবর ও সতর্কতা", loading: "খেতের খবর লোড হচ্ছে...", empty: "এই মুহূর্তে নতুন কোনো কৃষি সতর্কতা নেই।", read: "খবর পড়ুন", updated: "Google News থেকে আপডেট", refresh: "রিফ্রেশ করুন" },
+    ml: { eyebrow: "കാർഷിക വാർത്തകൾ", heading: "കൃഷിയിട വാർത്തകളും മുന്നറിയിപ്പുകളും", loading: "കൃഷിയിട വാർത്തകൾ ലോഡ് ചെയ്യുന്നു...", empty: "ഇപ്പോൾ പുതിയ കാർഷിക മുന്നറിയിപ്പുകളില്ല.", read: "വാർത്ത വായിക്കുക", updated: "Google News-ൽ നിന്നുള്ള അപ്ഡേറ്റ്", refresh: "പുതുക്കുക" },
+    or: { eyebrow: "କୃଷି ସମ୍ବାଦ", heading: "ଚାଷ ଖବର ଓ ସତର୍କତା", loading: "ଚାଷ ଖବର ଲୋଡ୍ ହେଉଛି...", empty: "ବର୍ତ୍ତମାନ କୌଣସି ନୂଆ କୃଷି ସତର୍କତା ନାହିଁ।", read: "ଖବର ପଢ଼ନ୍ତୁ", updated: "Google News ରୁ ଅପଡେଟ୍", refresh: "ପୁଣି ଲୋଡ୍ କରନ୍ତୁ" }
+  };
+  const notificationText = notificationCopy[activeLanguage] || notificationCopy.en;
 
   // Authenticate session on load
   useEffect(() => {
@@ -1142,8 +1164,8 @@ export default function Dashboard() {
                 <div id="farm-alerts-panel" className="notification-panel" role="dialog" aria-label="Agricultural broadcasts">
                   <div className="notification-header">
                     <div>
-                      <p className="notification-eyebrow"><span className="notification-live-dot" aria-hidden="true" />Agricultural broadcasts</p>
-                      <p className="notification-heading">Farm news and alerts</p>
+                      <p className="notification-eyebrow"><span className="notification-live-dot" aria-hidden="true" />{notificationText.eyebrow}</p>
+                      <p className="notification-heading">{notificationText.heading}</p>
                     </div>
                     <button 
                       onClick={() => setShowNewsDropdown(false)}
@@ -1158,11 +1180,11 @@ export default function Dashboard() {
                     {loadingNews ? (
                       <div className="notification-state">
                         <div className="notification-spinner" aria-hidden="true" />
-                        <span>Loading farm news...</span>
+                        <span>{notificationText.loading}</span>
                       </div>
                     ) : newsItems.length === 0 ? (
                       <div className="notification-state">
-                        No new farm alerts right now.
+                        {notificationText.empty}
                       </div>
                     ) : (
                       newsItems.map((item, idx) => (
@@ -1184,16 +1206,16 @@ export default function Dashboard() {
                           <h4 className="notification-title">
                             {item.title}
                           </h4>
-                          <span className="notification-read-more">Read update <span aria-hidden="true">→</span></span>
+                          <span className="notification-read-more">{notificationText.read} <span aria-hidden="true">→</span></span>
                         </a>
                       ))
                     )}
                   </div>
 
                   <div className="notification-footer">
-                    <span>Updated from Google News</span>
+                    <span>{notificationText.updated}</span>
                     <button onClick={fetchNews} className="notification-refresh">
-                      Force Refresh
+                      {notificationText.refresh}
                     </button>
                   </div>
                 </div>

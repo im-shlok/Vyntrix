@@ -195,6 +195,41 @@ body {
   background: #17382b !important;
 }
 
+/* Community language control: keep the native select readable on the light board. */
+.community-content .community-language-picker {
+  min-width: 9.25rem;
+  min-height: 2.5rem;
+  background: #ffffff !important;
+  border-color: #b9d9bf !important;
+  box-shadow: 0 4px 12px rgba(39, 83, 52, 0.08);
+  color: #536c5b !important;
+}
+
+.community-content .community-language-picker .text-emerald-400 {
+  color: #1f8a53 !important;
+}
+
+.community-content .community-language-select {
+  min-width: 7rem;
+  color: #17382b !important;
+  background: #ffffff !important;
+  color-scheme: light;
+  font-size: 0.75rem;
+  font-weight: 800;
+}
+
+.community-content .community-language-select option {
+  background: #ffffff !important;
+  color: #17382b !important;
+  font-size: 0.9rem;
+}
+
+.community-content .community-language-select:focus-visible {
+  outline: 3px solid rgba(226, 164, 49, 0.72);
+  outline-offset: 2px;
+  border-radius: 0.35rem;
+}
+
 .community-content h2,
 .community-content h3 {
   color: #17382b !important;

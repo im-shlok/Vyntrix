@@ -387,12 +387,13 @@ export default function CommunityPage() {
 
           <div className="flex gap-3 items-center">
             {/* Regional Language Select */}
-            <div className="bg-black/45 px-2.5 py-1 flex items-center gap-1.5 text-zinc-400 border border-white/10 rounded-full text-[11px] font-bold">
+            <div className="community-language-picker bg-black/45 px-2.5 py-1 flex items-center gap-1.5 text-zinc-400 border border-white/10 rounded-full text-[11px] font-bold">
               <Globe size={12} className="text-emerald-400 animate-pulse" />
               <select 
                 value={activeLanguage}
                 onChange={(e) => setActiveLanguage(e.target.value)}
-                className="bg-transparent outline-none cursor-pointer border-none text-[10.5px] font-bold text-emerald-300 font-sans"
+                aria-label="Choose community language"
+                className="community-language-select bg-transparent outline-none cursor-pointer border-none text-[10.5px] font-bold text-emerald-300 font-sans"
               >
                 {LANGUAGES.map((lang) => (
                   <option key={lang.code} value={lang.code} className="bg-[#050806] text-white">
