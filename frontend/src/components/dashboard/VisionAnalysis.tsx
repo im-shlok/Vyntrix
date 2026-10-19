@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { Camera, Upload, AlertTriangle, ShieldCheck, HeartPulse, Sparkles, Cpu, Layers, RefreshCw } from 'lucide-react';
+import { API_BASE_URL } from '@/lib/api';
 
 interface VisionAnalysisProps {
   onAnalyzeComplete: (data: any) => void;
@@ -214,7 +215,7 @@ export default function VisionAnalysis({ onAnalyzeComplete, activeLanguage }: Vi
     formData.append("language", activeLanguage);
 
     try {
-      const apiBaseUrl = process.env.NEXT_PUBLIC_BACKEND_API_URL || "http://localhost:8000";
+      const apiBaseUrl = API_BASE_URL;
       const res = await fetch(`${apiBaseUrl}/api/vision/analyze`, {
         method: "POST",
         body: formData

@@ -187,6 +187,49 @@ Open [http://localhost:3000](http://localhost:3000) to launch Agriva.
 
 ---
 
+## ☁️ Deploy as Vercel Services
+
+The repository contains a root `vercel.json` that deploys two services under
+one Vercel project:
+
+| Service | Runtime | Public paths |
+|---|---|---|
+| `frontend` | Next.js | `/`, `/api/news`, `/api/mandi` |
+| `backend` | Container using `backend/Dockerfile` | `/api/*`, `/static/*` |
+
+The frontend service has a private `BACKEND_URL` binding to the backend service.
+It is used only by the server-side `/api/mandi` route. Browser requests use the
+same-domain `/api` rewrites and do not expose the private binding.
+
+### Vercel setup
+
+1. Import this repository as one Vercel project.
+2. Keep the project root at the repository root; do not create separate Vercel
+   projects for `frontend` and `backend`.
+3. Add the backend secrets in Vercel Environment Variables. Use the names from
+   `backend/.env.example` and never commit their values.
+4. Use managed production services for `DATABASE_URL`, `REDIS_URL`, and
+   `QDRANT_URL`. The local SQLite, Redis, and Qdrant defaults are for local
+   development only.
+5. Set `CORS_ORIGINS` to the deployed frontend origin if a separate browser
+   origin will call the backend. Same-domain Vercel routes normally do not need
+   an additional CORS origin.
+6. Deploy with Vercel. For local multi-service testing, use `vercel dev -L` so
+   Vercel injects the service binding locally.
+
+### Persistence and runtime note
+
+The backend writes temporary audio and vision files under `/static` and uses a
+YOLO/Torch model plus FFmpeg. Vercel service instances have ephemeral local
+storage, so those files should be treated as short-lived response artifacts,
+not durable user storage. Durable uploads require object storage, and durable
+application data requires managed PostgreSQL/Redis/Qdrant services.
+
+The backend is configured as a container service because its existing Dockerfile
+installs FFmpeg and the native packages needed by the vision/audio stack.
+
+---
+
 ## 📂 Project Directory Structure
 
 ```

@@ -1,4 +1,7 @@
-export const API_BASE_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000').replace(/\/$/, '');
+// In Vercel services mode the backend is exposed through the same public
+// domain at /api. Keep an explicit URL for local Docker development, but do
+// not bake a localhost backend into production browser requests.
+export const API_BASE_URL = (process.env.NEXT_PUBLIC_API_URL || '').replace(/\/$/, '');
 
 export class ApiError extends Error {
   status: number;

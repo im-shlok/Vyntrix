@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Map, Layers, Radio, AlertTriangle, Crosshair, Check } from 'lucide-react';
+import { API_BASE_URL } from '@/lib/api';
 
 interface FarmMapProps {
   weather: any;
@@ -266,7 +267,7 @@ export default function FarmMap({ weather, soil, activeLanguage, farmerLat, farm
     }
 
     setLocationStatus("FETCHING_ADDRESS");
-    fetch("http://localhost:8000/api/location/resolve", {
+    fetch(`${API_BASE_URL}/api/location/resolve`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({

@@ -2301,7 +2301,13 @@ export async function GET(request: Request) {
   let govApiFailed = false;
 
   try {
-    const backendUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+    // Vercel injects BACKEND_URL from the frontend service binding. The
+    // explicit local fallbacks keep `next dev` and Docker Compose working.
+    const backendUrl = (
+      process.env.BACKEND_URL ||
+      process.env.NEXT_PUBLIC_API_URL ||
+      'http://localhost:8000'
+    ).replace(/\/$/, '');
     const govRes = await fetch(`${backendUrl}/api/mandi/records`, {
       next: { revalidate: 300 },
     });
