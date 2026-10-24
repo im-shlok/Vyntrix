@@ -1,0 +1,9 @@
+.env
+*.db
+.rag_cache/
+__pycache__/
+*.py[cod]
+app/static/uploads/
+app/static/voice/
+.git/
+.gitignore

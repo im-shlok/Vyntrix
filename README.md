@@ -225,8 +225,14 @@ storage, so those files should be treated as short-lived response artifacts,
 not durable user storage. Durable uploads require object storage, and durable
 application data requires managed PostgreSQL/Redis/Qdrant services.
 
-The backend is configured as a container service because its existing Dockerfile
-installs FFmpeg and the native packages needed by the vision/audio stack.
+The backend is configured as a container service because its Dockerfile installs
+FFmpeg and the native packages needed by the vision/audio stack. The Dockerfile
+installs the CPU-only PyTorch wheels in a separate image layer and uses
+`opencv-python-headless` to avoid oversized Vercel Container Registry layers.
+VCR currently allows up to 2 GB per compressed layer, so the original single
+CUDA-heavy dependency layer could fail with HTTP 413 during upload. The backend
+also reads Vercel's injected `PORT` value and falls back to port `8000` for local
+Docker development.
 
 ---
 
